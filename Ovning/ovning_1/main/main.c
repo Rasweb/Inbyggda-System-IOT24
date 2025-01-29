@@ -21,6 +21,10 @@
     PRINTF_COLOR(ANSI_BLUE, "Group 1 "); \
     PRINTF_COLOR(ANSI_CYAN, format, ##__VA_ARGS__);
 
+#define PRINTF_COLOR_WITH_LINE(color, format_string, ...) \
+    PRINTF_COLOR(ANSI_MAGENTA, "[%s:%d] ", __FILE__, __LINE__); \
+    PRINTF_COLOR(color, format_string, ##__VA_ARGS__);
+
 
 const static char* TAG = "MAIN";
 
@@ -33,4 +37,6 @@ void app_main(void)
    PRINTF_COLOR(ANSI_RED, "%s" NEW_LINE, test_string);
 
    PRINTF_GROUP_1("Hello World %d" NEW_LINE, NEW_WORLD_COUNT);
+
+   PRINTF_COLOR_WITH_LINE(ANSI_GREEN, "Hello world %d" NEW_LINE, NEW_WORLD_COUNT);
 }
