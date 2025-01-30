@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../Components"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"esp_log.h": "c",
+			"helper_component.h": "c",
+			"stdio.h": "c"
+		}
+	}
+}
