@@ -11,7 +11,8 @@
 		"files.associations": {
 			"esp_log.h": "c",
 			"helper_component.h": "c",
-			"stdio.h": "c"
+			"stdio.h": "c",
+			"format": "cpp"
 		}
 	}
 }

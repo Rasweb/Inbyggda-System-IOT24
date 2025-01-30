@@ -1,0 +1,6 @@
+menu "Printer configuration"
+    config PRINT_LEVEL
+        int 0
+        default 0
+        
+endmenu
