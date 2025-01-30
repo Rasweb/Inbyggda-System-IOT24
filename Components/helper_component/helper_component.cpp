@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include "helper_component.h"
 
-void func(void)
-{
-
+namespace inbyggda_iot24{
+    int func()
+    {
+        return 1;
+    }
 }

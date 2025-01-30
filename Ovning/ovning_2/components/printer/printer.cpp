@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include "printer.h"
-
-int print()
-{
-    return 1;
+namespace ovning_2{
+    int print()
+    {
+        return 1;
+    }
 }
