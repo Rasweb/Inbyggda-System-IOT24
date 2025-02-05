@@ -33,7 +33,7 @@ const static char* TAG = "MAIN";
 
 void app_main(void)
 {
-    ESP_LOGI(TAG, "Hello World for my %d time", NEW_WORLD_COUNT); // Prints text to the console using ESP log
+    // ESP_LOGI(TAG, "Hello World for my %d time", NEW_WORLD_COUNT); // Prints text to the console using ESP log
     // printf("\033[0;31mtest"); // A color code for red, test will print out red
 
    const char* test_string = "test";
