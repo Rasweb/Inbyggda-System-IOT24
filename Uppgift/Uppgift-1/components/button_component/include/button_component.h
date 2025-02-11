@@ -31,6 +31,7 @@ typedef struct
     bool btn_latch;
     PIN_TYPE btn_pin;
     int btn_pull_down;
+    int last_press_time;
 } button_component;
 
 button_component button_init(PIN_TYPE pin, gpio_pull_down_mode pull_down, gpio_pull_up_mode pull_up, gpio_int_type_mode intr);

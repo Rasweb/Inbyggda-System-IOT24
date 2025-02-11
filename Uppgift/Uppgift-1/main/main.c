@@ -9,20 +9,19 @@
 
 void buttonPressedCallback(int pin)
 {
-    printf("Tryckt");
+    printf("Tryckt %d", pin);
 }
 
 void app_main(void)
 {
     button_component btn1 = button_init(BUTTON_PIN, PULL_DOWN_ENABLE, PULL_UP_ENABLE, INTR_TYPE_VAL);
     button_component btn2 = button_init(BUTTON_PIN2, PULL_DOWN_ENABLE, PULL_UP_ENABLE, INTR_TYPE_VAL);
-
-    TickType_t startTick = xTaskGetTickCount();
+    setOnPressed(buttonPressedCallback);
     while (1)
     {
         button_update(&btn1);
         button_update(&btn2);
 
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
 }
