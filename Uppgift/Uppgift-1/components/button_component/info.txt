@@ -1,0 +1,9 @@
+// Using the btn in the main:
+button_component btn1 = button_init(GPIO_NUM_2, 1, 0, INTR_TYPE_VAL);
+setOnPressed(&btn1, callbackFunc);
+
+while (1)
+{
+    button_update(&btn1);
+    vTaskDelay(pdMS_TO_TICKS(10));
+}

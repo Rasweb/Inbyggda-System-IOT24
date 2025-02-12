@@ -36,9 +36,7 @@ void button_update(button_component *btn)
         btn->btn_pressed = false;
         if (btn)
             if (btn->onPressedCallback != NULL)
-            {
                 btn->onPressedCallback(btn->btn_pin);
-            }
     }
     else if (lvl == 0 && btn->btn_latch == false)
     {
