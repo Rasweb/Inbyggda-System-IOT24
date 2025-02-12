@@ -2,7 +2,7 @@
 #include "button_component.h"
 #include "freertos/FreeRTOS.h"
 
-static void (*onPressedCallback)(int pin) = NULL;
+// static void (*onPressedCallback)(int pin) = NULL;
 
 button_component button_init(PIN_TYPE pin, gpio_pull_down_mode pull_down, gpio_pull_up_mode pull_up, gpio_int_type_mode intr)
 {
@@ -15,24 +15,15 @@ button_component button_init(PIN_TYPE pin, gpio_pull_down_mode pull_down, gpio_p
     };
     button_component new_btn;
 
-    if (pull_down == 1)
-    {
-        new_btn.btn_pull_down = 1;
-    }
-    else
-    {
-        new_btn.btn_pull_down = 0;
-    }
-
     new_btn.btn_pressed = false;
     new_btn.btn_latch = false;
     new_btn.btn_pin = pin;
     new_btn.last_press_time = 0;
+    new_btn.onPressedCallback = NULL;
     ESP_ERROR_CHECK_WITHOUT_ABORT(gpio_config(&button_config));
     return new_btn;
 };
 
-// Implementera debounce
 void button_update(button_component *btn)
 {
     int lvl = gpio_get_level(btn->btn_pin);
@@ -43,20 +34,19 @@ void button_update(button_component *btn)
     {
         btn->btn_latch = false;
         btn->btn_pressed = false;
+        if (btn)
+            if (btn->onPressedCallback != NULL)
+            {
+                btn->onPressedCallback(btn->btn_pin);
+            }
     }
     else if (lvl == 0 && btn->btn_latch == false)
     {
-        // 10 ms debounce
         if ((current_time - btn->last_press_time) >= pdMS_TO_TICKS(10))
         {
             btn->btn_latch = true;
             btn->btn_pressed = true;
-            btn->last_press_time = current_time;
-
-            if (onPressedCallback != NULL)
-            {
-                onPressedCallback(btn->btn_pin);
-            }
+            btn->last_press_time = xTaskGetTickCount();
         }
     }
 };
@@ -66,7 +56,7 @@ int button_isPressed(button_component *btn)
     return btn->btn_pressed;
 };
 
-void setOnPressed(void (*onPressed)(int pin))
+void setOnPressed(button_component *btn, void (*onPressed)(int pin))
 {
-    onPressedCallback = onPressed;
+    btn->onPressedCallback = onPressed;
 };
