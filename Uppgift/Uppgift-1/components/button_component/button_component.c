@@ -4,7 +4,7 @@
 
 // static void (*onPressedCallback)(int pin) = NULL;
 
-button_component button_init(PIN_TYPE pin, gpio_pull_down_mode pull_down, gpio_pull_up_mode pull_up, gpio_int_type_mode intr)
+button_component *btn_init(PIN_TYPE pin, gpio_pull_down_mode pull_down, gpio_pull_up_mode pull_up, gpio_int_type_mode intr)
 {
     gpio_config_t button_config = {
         .mode = GPIO_MODE_INPUT,
@@ -13,18 +13,18 @@ button_component button_init(PIN_TYPE pin, gpio_pull_down_mode pull_down, gpio_p
         .pull_up_en = pull_up,
         .intr_type = intr,
     };
-    button_component new_btn;
 
-    new_btn.btn_pressed = false;
-    new_btn.btn_latch = false;
-    new_btn.btn_pin = pin;
-    new_btn.last_press_time = 0;
-    new_btn.onPressedCallback = NULL;
+    button_component *new_btn = pvPortMalloc(sizeof(button_component));
+    new_btn->btn_pressed = false;
+    new_btn->btn_latch = false;
+    new_btn->btn_pin = pin;
+    new_btn->last_press_time = 0;
+    new_btn->onPressedCallback = NULL;
     ESP_ERROR_CHECK_WITHOUT_ABORT(gpio_config(&button_config));
     return new_btn;
 };
 
-void button_update(button_component *btn)
+void btn_update(button_component *btn)
 {
     int lvl = gpio_get_level(btn->btn_pin);
     // current time
@@ -49,12 +49,18 @@ void button_update(button_component *btn)
     }
 };
 
-int button_isPressed(button_component *btn)
+int btn_isPressed(button_component *btn)
 {
     return btn->btn_pressed;
 };
 
-void setOnPressed(button_component *btn, void (*onPressed)(int pin))
+void btn_setOnPressed(button_component *btn, void (*onPressed)(int pin))
 {
     btn->onPressedCallback = onPressed;
 };
+
+void btn_destroy(button_component *btn)
+{
+    vPortFree(btn);
+    btn = NULL;
+}

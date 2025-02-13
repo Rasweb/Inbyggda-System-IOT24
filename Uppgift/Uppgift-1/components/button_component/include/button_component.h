@@ -34,12 +34,14 @@ typedef struct
     void (*onPressedCallback)(int pin);
 } button_component;
 
-button_component button_init(PIN_TYPE pin, gpio_pull_down_mode pull_down, gpio_pull_up_mode pull_up, gpio_int_type_mode intr);
+button_component *btn_init(PIN_TYPE pin, gpio_pull_down_mode pull_down, gpio_pull_up_mode pull_up, gpio_int_type_mode intr);
 
 // onPressed kallas i button update
-void button_update(button_component *btn);
+void btn_update(button_component *btn);
 
-int button_isPressed(button_component *btn);
+int btn_isPressed(button_component *btn);
 
 // Sätter onPressed
-void setOnPressed(button_component *btn, void (*onPressed)(int pin));
+void btn_setOnPressed(button_component *btn, void (*onPressed)(int pin));
+
+void btn_destroy(button_component *btn);
