@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include "button_component.h"
 #include "freertos/FreeRTOS.h"
-
-// static void (*onPressedCallback)(int pin) = NULL;
+#include "esp_log.h"
+#define TAG "MAIN"
+#define DEBOUNCE_DELAY 10
 
 button_component *btn_init(PIN_TYPE pin, gpio_pull_down_mode pull_down, gpio_pull_up_mode pull_up, gpio_int_type_mode intr)
 {
@@ -15,10 +16,10 @@ button_component *btn_init(PIN_TYPE pin, gpio_pull_down_mode pull_down, gpio_pul
     };
 
     button_component *new_btn = pvPortMalloc(sizeof(button_component));
-    new_btn->btn_pressed = false;
-    new_btn->btn_latch = false;
     new_btn->btn_pin = pin;
-    new_btn->last_press_time = 0;
+    new_btn->state = STATE_RELEASED;
+    new_btn->stateChangeTime = 0;
+    new_btn->onReleasedCallback = NULL;
     new_btn->onPressedCallback = NULL;
     ESP_ERROR_CHECK_WITHOUT_ABORT(gpio_config(&button_config));
     return new_btn;
@@ -26,32 +27,73 @@ button_component *btn_init(PIN_TYPE pin, gpio_pull_down_mode pull_down, gpio_pul
 
 void btn_update(button_component *btn)
 {
-    int lvl = gpio_get_level(btn->btn_pin);
-    // current time
+    int level = gpio_get_level(btn->btn_pin);
     TickType_t current_time = xTaskGetTickCount();
-
-    if (lvl == 1 && btn->btn_latch == 1)
+    switch (btn->state)
     {
-        btn->btn_latch = false;
-        btn->btn_pressed = false;
-        if (btn)
-            if (btn->onPressedCallback != NULL)
-                btn->onPressedCallback(btn->btn_pin);
-    }
-    else if (lvl == 0 && btn->btn_latch == false)
-    {
-        if ((current_time - btn->last_press_time) >= pdMS_TO_TICKS(10))
+    case STATE_RELEASED:
+        if (level == 1)
         {
-            btn->btn_latch = true;
-            btn->btn_pressed = true;
-            btn->last_press_time = xTaskGetTickCount();
+            btn->state = STATE_PRESS_DEBOUNCE;
+            btn->stateChangeTime = current_time;
+            ESP_LOGI(TAG, "Entering STATE_PRESS_DEBOUNCE");
         }
+        break;
+    case STATE_PRESS_DEBOUNCE:
+        if ((current_time - btn->stateChangeTime) >= pdMS_TO_TICKS(DEBOUNCE_DELAY))
+        {
+            if (gpio_get_level(btn->btn_pin) == 1)
+            {
+                btn->state = STATE_PRESSED;
+                btn->stateChangeTime = current_time;
+                ESP_LOGI(TAG, "Button Pressed, entering STATE_PRESSED");
+                if (btn->onPressedCallback != NULL)
+                    btn->onPressedCallback(btn->btn_pin);
+            }
+            else
+            {
+                btn->state = STATE_RELEASED;
+                ESP_LOGI(TAG, "Bounce detected during press; returning to STATE_RELEASED");
+            }
+        }
+        break;
+
+    case STATE_PRESSED:
+        if (level == 0)
+        {
+            btn->state = STATE_RELEASE_DEBOUNCE;
+            btn->stateChangeTime = current_time;
+            ESP_LOGI(TAG, "Entering STATE_RELEASE_DEBOUNCE");
+        }
+        break;
+    case STATE_RELEASE_DEBOUNCE:
+        if ((current_time - btn->stateChangeTime) >= pdMS_TO_TICKS(DEBOUNCE_DELAY))
+        {
+            if (gpio_get_level(btn->btn_pin) == 0)
+            {
+                btn->state = STATE_RELEASED;
+                btn->stateChangeTime = current_time;
+                ESP_LOGI(TAG, "Button Released, returning to STATE_RELEASED");
+                // if(btn->onReleasedCallback != NULL)
+                //     btn->onReleasedCallback(btn->btn_pin);
+            }
+            else
+            {
+                btn->state = STATE_PRESSED;
+                ESP_LOGI(TAG, "Bounce detected during release; returning to STATE_PRESSED");
+            }
+        }
+        break;
+    default:
+        ESP_LOGE(TAG, "Unknown state");
+        btn->state = STATE_RELEASED;
+        break;
     }
 };
 
 int btn_isPressed(button_component *btn)
 {
-    return btn->btn_pressed;
+    return (btn->state == STATE_PRESSED) ? 1 : 0;
 };
 
 void btn_setOnPressed(button_component *btn, void (*onPressed)(int pin))

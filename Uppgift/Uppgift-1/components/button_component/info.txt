@@ -1,9 +1,0 @@
-
-
-// BTN
-    // button_component *btn1 = btn_init(BTN_1_PIN, BTN_1_PULL_DOWN, BTN_1_PULL_UP, INTR_TYPE_VAL);
-    // btn_setOnPressed(btn1, callbackFunc);
-while(1){
-
-    // btn_update(btn1);
-}

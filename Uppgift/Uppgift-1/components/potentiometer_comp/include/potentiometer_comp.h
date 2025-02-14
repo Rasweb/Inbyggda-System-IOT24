@@ -4,8 +4,10 @@
 #include "freertos/FreeRTOS.h"
 #define PIN_GPIO int
 #define THRESHOLD int
+#define CHANNEL_TYPE adc_channel_t
 
 typedef struct adc_oneshot_unit_ctx_t *adc_oneshot_unit_handle_t;
+
 typedef struct
 {
     PIN_GPIO pin;
@@ -15,10 +17,11 @@ typedef struct
     int threshold;
     int risingEdge;
     adc_oneshot_unit_handle_t handle;
+    adc_channel_t adc_channel;
 } potentiometer;
 
 // xxx init(pin / adc, xxx)
-potentiometer *pot_init(PIN_GPIO pin, THRESHOLD threshold);
+potentiometer *pot_init(PIN_GPIO pin, THRESHOLD threshold, CHANNEL_TYPE channel);
 void pot_update(potentiometer *pot);
 int pot_getValue(potentiometer *pot);
 

@@ -1,6 +1,6 @@
 #include "potentiometer_comp.h"
 
-potentiometer *pot_init(PIN_GPIO pin, THRESHOLD threshold)
+potentiometer *pot_init(PIN_GPIO pin, THRESHOLD threshold, CHANNEL_TYPE channel)
 {
     // ADC init
     adc_oneshot_unit_handle_t pot_handle;
@@ -16,34 +16,46 @@ potentiometer *pot_init(PIN_GPIO pin, THRESHOLD threshold)
         .bitwidth = ADC_BITWIDTH_DEFAULT,
         .atten = ADC_ATTEN_DB_12,
     };
-    ESP_ERROR_CHECK_WITHOUT_ABORT(adc_oneshot_config_channel(pot_handle, ADC_CHANNEL_3, &config));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(adc_oneshot_config_channel(pot_handle, channel, &config));
 
     potentiometer *new_pot = pvPortMalloc(sizeof(potentiometer));
     new_pot->pin = pin;
     new_pot->onThresholdCallback = NULL;
+    new_pot->threshold = threshold;
     new_pot->lastValue = 0;
-    new_pot->adc_raw = threshold;
+    new_pot->adc_raw = 0;
     new_pot->risingEdge = 1;
     new_pot->handle = pot_handle;
+    new_pot->adc_channel = channel;
     return new_pot;
 }
 void pot_update(potentiometer *pot)
 {
-    // int adc_raw = 512;
-    // ESP_ERROR_CHECK_WITHOUT_ABORT(adc_oneshot_read(pot->handle, ADC_CHANNEL_3, &adc_raw));
-    ESP_ERROR_CHECK_WITHOUT_ABORT(adc_oneshot_read(pot->handle, ADC_CHANNEL_3, &pot->adc_raw));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(adc_oneshot_read(pot->handle, pot->adc_channel, &pot->adc_raw));
+
+    // Nurvarande värde överstiger thresholden
+    if (pot->adc_raw >= pot->threshold && pot->risingEdge)
+    {
+        if (pot->onThresholdCallback != NULL)
+        {
+            pot->onThresholdCallback(pot->adc_raw);
+            // Tvingar threshold varningen att bara kallas en gång
+            pot->risingEdge = 0;
+        }
+    }
+    else if (pot->adc_raw < pot->threshold)
+    {
+        // Är värdet under thresholden, tillåt thresholden att kallas
+        pot->risingEdge = 1;
+    }
+
     pot->lastValue = pot->adc_raw;
-    int curr = pot_getValue(pot);
-    printf("Current: %d", curr);
-    printf("Threshold: %d", pot->threshold);
-    if (pot->onThresholdCallback != NULL)
-        pot->onThresholdCallback(pot->lastValue);
 }
 int pot_getValue(potentiometer *pot)
 {
     return pot->lastValue;
 }
-// int threshold, bool risingEdge
+
 void pot_setOnThreshold(potentiometer *pot, void (*onThreshold)())
 {
     pot->onThresholdCallback = onThreshold;
@@ -51,6 +63,9 @@ void pot_setOnThreshold(potentiometer *pot, void (*onThreshold)())
 
 void pot_destroy(potentiometer *pot)
 {
-    vPortFree(pot);
-    pot = NULL;
+    if (pot != NULL)
+    {
+        vPortFree(pot);
+        pot = NULL;
+    }
 }

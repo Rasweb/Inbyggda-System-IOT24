@@ -25,13 +25,21 @@ typedef enum
     INTR_MAX,
 } gpio_int_type_mode;
 
+typedef enum
+{
+    STATE_RELEASED,        // Not pressed
+    STATE_PRESS_DEBOUNCE,  // Pressed, waiting for debounce
+    STATE_PRESSED,         // Pressed and held
+    STATE_RELEASE_DEBOUNCE // Released, waiting for debounce
+} btn_state_t;
+
 typedef struct
 {
-    bool btn_pressed;
-    bool btn_latch;
     PIN_TYPE btn_pin;
-    int last_press_time;
+    btn_state_t state;
+    int stateChangeTime;
     void (*onPressedCallback)(int pin);
+    void (*onReleasedCallback)(int pin);
 } button_component;
 
 button_component *btn_init(PIN_TYPE pin, gpio_pull_down_mode pull_down, gpio_pull_up_mode pull_up, gpio_int_type_mode intr);
