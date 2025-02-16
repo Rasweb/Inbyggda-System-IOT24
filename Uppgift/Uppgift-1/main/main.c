@@ -11,8 +11,6 @@
 #define CHANNEL ADC_CHANNEL_3
 
 /*
-Button state machine - https://github.com/CreeksideAB/inbyggda_system_iot24/tree/main/Ovning/ovning_state_machine
-Threshold callback ska kallas när den har nått thresholden - För potentiometer: https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32c6/api-reference/peripherals/adc_oneshot.html
 Binary led ingen pmw (av och på) - För digital led: https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32c6/api-reference/peripherals/gpio.html#gpio-rtc-gpio
 Analog led (ljustyrka) - För led: https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32c6/api-reference/peripherals/ledc.html
 */
