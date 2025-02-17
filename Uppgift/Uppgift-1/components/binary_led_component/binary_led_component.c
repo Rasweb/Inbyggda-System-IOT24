@@ -1,44 +1,57 @@
 #include "binary_led_component.h"
 
-void binary_led_init(int pin)
+binary_led_component *binary_led_init(gpio_mode_t gpio_mode, int pin, int pull_down, int pull_up)
 {
-
-    // LEDC timer configuration
-    ledc_timer_config_t ledcTimerConfig = {
-        .clk_cfg = LEDC_AUTO_CLK,
-        .deconfigure = false,
-        .duty_resolution = LEDC_TIMER_12_BIT,
-        .freq_hz = 1000,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .timer_num = LEDC_TIMER_0,
+    gpio_config_t ledc_config = {
+        .mode = gpio_mode,
+        .pin_bit_mask = ((uint64_t)1) << pin,
+        .pull_down_en = pull_down,
+        .pull_up_en = pull_up,
     };
-    ledc_timer_config(&ledcTimerConfig);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(gpio_config(&ledc_config));
 
-    ledc_channel_config_t ledcChannelConfig = {
-        .channel = LEDC_CHANNEL_0,
-        .duty = 0,
-        .flags.output_invert = 0,
-        .gpio_num = pin,
-        .hpoint = 0,
-        .intr_type = LEDC_INTR_DISABLE,
-        .speed_mode = LEDC_LOW_SPEED_MODE,
-        .timer_sel = LEDC_TIMER_0,
-    };
-    ledc_channel_config(&ledcChannelConfig);
+    binary_led_component *new_binary_led = pvPortMalloc(sizeof(binary_led_component));
+
+    new_binary_led->gpio_mode = gpio_mode;
+    new_binary_led->pin = pin;
+    new_binary_led->pull_down = pull_down;
+    new_binary_led->pull_up = pull_up;
+    return new_binary_led;
 };
 
-void binary_led_update()
+void binary_led_update(int pin, int value)
 {
-
-    uint32_t current_duty;
-    // ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, current_duty, 0);
-    current_duty = ledc_get_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(gpio_set_level(pin, value));
 };
 
-void binary_led_setLed(uint32_t value)
+void binary_led_setLed(int pin, int value)
 {
-    ledc_set_duty_and_update(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, value, 0);
+    binary_led_update(pin, value);
+}
+
+void binary_led_blink(blink_states binary_states, int secOn, int secOff)
+{
+    //    xxx blink(miliseocnds_on, milliseconds_off, xxx)
+
+    TickType_t on_time = xTaskGetTickCount();
+    TickType_t off_time = xTaskGetTickCount();
+
+    switch (binary_states)
+    {
+    case BLINK_ON:
+
+    case BLINK_OFF:
+
+    default:
+        break;
+    }
 };
 
-void binary_led_blink() {
-};
+void binary_destroy(binary_led_component *binary_led)
+{
+    if (binary_led != NULL)
+    {
+        vPortFree(binary_led);
+        binary_led = NULL;
+    }
+}
