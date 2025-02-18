@@ -65,11 +65,13 @@ void app_main(void)
     */
 
     binary_led_component *binary_led1 = binary_led_init(BINARY_LED_MODE, BINARY_LED_PIN, BINARY_LED_PULL_DOWN, BINARY_LED_PULL_UP);
-    // binary_led_update(BINARY_LED_PIN, 1);
     binary_led_setLed(BINARY_LED_PIN, 0);
 
+    // Start blink:
+    binary_led_blink(binary_led1, 500, 500);
     while (1)
     {
-        // vTaskDelay(pdMS_TO_TICKS(10));
+        binary_led_update(binary_led1);
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
