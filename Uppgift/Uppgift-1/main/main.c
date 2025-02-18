@@ -3,6 +3,7 @@
 #include "button_component.h"
 #include "potentiometer_comp.h"
 #include "binary_led_component.h"
+#include "analog_led_component.h"
 #include "esp_log.h"
 #define BTN_1_PIN GPIO_NUM_2
 #define BTN_1_PULL_DOWN 1
@@ -15,8 +16,15 @@
 #define BINARY_LED_PULL_DOWN 1
 #define BINARY_LED_PULL_UP 0
 
+#define ANALOG_LED_DUTY_RES LEDC_TIMER_12_BIT
+#define ANALOG_LED_HERT 1000
+#define ANALOG_LED_SPEED_MODE LEDC_LOW_SPEED_MODE
+#define ANALOG_LED_TIMER LEDC_TIMER_0
+#define ANALOG_LED_CHANNEL LEDC_CHANNEL_0
+#define ANALOG_LED_DUTY_RANGE 0
+#define ANALOG_LED_PIN GPIO_NUM_4
+
 /*
-Binary led ingen pmw (av och på) - För digital led: https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32c6/api-reference/peripherals/gpio.html#gpio-rtc-gpio
 Analog led (ljustyrka) - För analog led: https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32c6/api-reference/peripherals/ledc.html
 - (sin(x) + 1)
 - E.g sin(1,5 pi) = -1 // Plusa på 1 för att få 0
@@ -46,8 +54,8 @@ void app_main(void)
 
     btn_update(btn1);
     vTaskDelay(pdMS_TO_TICKS(10));
-}
-*/
+    }
+    */
 
     /*
     // Potentiometer
@@ -64,6 +72,8 @@ void app_main(void)
     }
     */
 
+    /*
+    // Binary LED
     binary_led_component *binary_led1 = binary_led_init(BINARY_LED_MODE, BINARY_LED_PIN, BINARY_LED_PULL_DOWN, BINARY_LED_PULL_UP);
     binary_led_setLed(BINARY_LED_PIN, 0);
 
@@ -74,4 +84,5 @@ void app_main(void)
         binary_led_update(binary_led1);
         vTaskDelay(pdMS_TO_TICKS(10));
     }
+    */
 }

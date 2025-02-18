@@ -4,25 +4,6 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_log.h"
 
-/*
-Manual state:
-* Sub states:
-- On
-- Off
-
-Blink States
-* Sub states:
-- On
-- Off
-
-Manual -> Blink: db = 1
-ManualOn -> ManualOff: d = 0
-ManualOff -> ManualOn: d = 1
-
-Blink -> Manual: db = 0
-BlinkOn -> BlinkOff: time
-BlinkOff -> BlinkOn: time
-*/
 typedef enum
 {
     BINARY_ON,
