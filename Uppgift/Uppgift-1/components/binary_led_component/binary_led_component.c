@@ -3,7 +3,7 @@
 binary_led_component *binary_led_init(gpio_mode_t gpio_mode, int pin, int pull_down, int pull_up)
 {
     gpio_config_t ledc_config = {
-        .pin_bit_mask = ((uint64_t)1) << pin,
+        .pin_bit_mask = 1ULL << pin,
         .mode = gpio_mode,
         .pull_down_en = pull_down,
         .pull_up_en = pull_up,
@@ -26,40 +26,50 @@ binary_led_component *binary_led_init(gpio_mode_t gpio_mode, int pin, int pull_d
 void binary_led_update(binary_led_component *led)
 {
     TickType_t current_time = xTaskGetTickCount();
+    printf("state: %d\t", led->state);
+
     switch (led->state)
     {
     case BINARY_ON:
-        binary_led_setLed(led->pin, 1);
+        ESP_ERROR_CHECK_WITHOUT_ABORT(gpio_set_level(led->pin, led->state));
         break;
     case BINARY_OFF:
-        binary_led_setLed(led->pin, 0);
+        ESP_ERROR_CHECK_WITHOUT_ABORT(gpio_set_level(led->pin, led->state));
         break;
     case BINARY_BLINK_ON:
         if ((current_time - led->stateChangeTime) >= pdMS_TO_TICKS(led->miliseconds_on))
         {
-            binary_led_setLed(led->pin, 0);
-            led->state = BINARY_BLINK_OFF;
+            ESP_ERROR_CHECK_WITHOUT_ABORT(gpio_set_level(led->pin, BINARY_ON));
             led->stateChangeTime = current_time;
+            led->next_state = BINARY_BLINK_OFF;
+            printf("\n\n");
         }
+        else
+            led->next_state = BINARY_BLINK_ON;
         break;
     case BINARY_BLINK_OFF:
         if ((current_time - led->stateChangeTime) >= pdMS_TO_TICKS(led->miliseconds_off))
         {
-            binary_led_setLed(led->pin, 1);
-            led->state = BINARY_BLINK_ON;
+            ESP_ERROR_CHECK_WITHOUT_ABORT(gpio_set_level(led->pin, BINARY_OFF));
             led->stateChangeTime = current_time;
+            led->next_state = BINARY_BLINK_ON;
+            printf("\n\n");
         }
+        else
+            led->next_state = BINARY_BLINK_OFF;
         break;
     default:
         ESP_LOGE("LED", "Unknown state");
         led->state = BINARY_OFF;
         break;
     }
+    led->pre_state = led->state;
+    led->state = led->next_state;
 };
 
-void binary_led_setLed(int pin, int value)
+void binary_led_setLed(binary_led_component *led, int value)
 {
-    ESP_ERROR_CHECK_WITHOUT_ABORT(gpio_set_level(pin, value));
+    led->state = value;
 }
 
 void binary_led_blink(binary_led_component *led, uint32_t miliseconds_on, uint32_t miliseconds_off)
@@ -67,8 +77,6 @@ void binary_led_blink(binary_led_component *led, uint32_t miliseconds_on, uint32
     led->miliseconds_on = miliseconds_on;
     led->miliseconds_off = miliseconds_off;
     led->state = BINARY_BLINK_ON;
-    led->stateChangeTime = xTaskGetTickCount();
-    binary_led_setLed(led->pin, 1);
 };
 
 void binary_destroy(binary_led_component *binary_led)
