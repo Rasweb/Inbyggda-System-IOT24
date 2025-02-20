@@ -15,16 +15,17 @@ typedef struct
     void (*onThresholdCallback)(int value);
     int adc_raw;
     int threshold;
-    int risingEdge;
+    bool risingEdge;     // Kallar funktionen när den överstiger gränsen.
+    bool fallingEdge;    // Kallar funktionen när den är under gränsen.
+    bool thresholdState; // Gör så att funktionen kallas en gång.
     adc_oneshot_unit_handle_t handle;
     adc_channel_t adc_channel;
+    bool beforeThreshold;
+    bool afterThreshold;
 } potentiometer;
 
-// xxx init(pin / adc, xxx)
-potentiometer *pot_init(PIN_GPIO pin, THRESHOLD threshold, CHANNEL_TYPE channel);
+potentiometer *pot_init(PIN_GPIO pin, CHANNEL_TYPE channel);
 void pot_update(potentiometer *pot);
 int pot_getValue(potentiometer *pot);
-
-// xxx setOnThreshold ( int threshold, bool risingEdge, xxx (*onThreshold)(int pin/adc, value, xxx), xxx )
-void pot_setOnThreshold(potentiometer *pot, void (*onThreshold)());
+void pot_setOnThreshold(potentiometer *pot, THRESHOLD threshold, bool after, bool before, void (*onThreshold)());
 void pot_destroy(potentiometer *pot);

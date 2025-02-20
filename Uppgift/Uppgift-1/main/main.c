@@ -9,6 +9,7 @@
 #define BTN_1_PULL_DOWN 1
 #define BTN_1_PULL_UP 0
 #define INTR_TYPE_VAL GPIO_INTR_DISABLE
+
 #define POT_THRESHOLD 3000
 #define CHANNEL ADC_CHANNEL_3
 
@@ -17,16 +18,16 @@
 #define BINARY_LED_PULL_DOWN 0
 #define BINARY_LED_PULL_UP 1
 
+#define ANALOG_LED_PIN GPIO_NUM_4
 #define ANALOG_LED_DUTY_RES LEDC_TIMER_12_BIT
-#define ANALOG_LED_HERT 1000
 #define ANALOG_LED_SPEED_MODE LEDC_LOW_SPEED_MODE
-#define ANALOG_LED_TIMER LEDC_TIMER_0
+#define ANALOG_LED_HERTZ 1000
+#define ANALOG_LED_TIMER_NUM LEDC_TIMER_0
 #define ANALOG_LED_CHANNEL LEDC_CHANNEL_0
 #define ANALOG_LED_DUTY_RANGE 0
-#define ANALOG_LED_PIN GPIO_NUM_4
+#define ANALOG_FADE_DURATION 100
 
 /*
-Analog led (ljustyrka) - För analog led: https://docs.espressif.com/projects/esp-idf/en/v5.4/esp32c6/api-reference/peripherals/ledc.html
 - (sin(x) + 1)
 - E.g sin(1,5 pi) = -1 // Plusa på 1 för att få 0
 https://setosa.io/ev/sine-and-cosine/
@@ -50,19 +51,19 @@ void app_main(void)
     // BTN
     button_component *btn1 = btn_init(BTN_1_PIN, BTN_1_PULL_DOWN, BTN_1_PULL_UP, INTR_TYPE_VAL);
     btn_setOnPressed(btn1, callbackFunc);
-    while (1)
-    {
+    // while (1)
+    //{
 
     // btn_update(btn1);
     // vTaskDelay(pdMS_TO_TICKS(10));
-    }
+    //}
     */
 
     /*
     // Potentiometer och knapp
-    potentiometer *pot1 = pot_init(GPIO_NUM_3, POT_THRESHOLD, CHANNEL);
+    potentiometer *pot1 = pot_init(GPIO_NUM_3, CHANNEL);
 
-    pot_setOnThreshold(pot1, thresholdCallback);
+    pot_setOnThreshold(pot1, POT_THRESHOLD, true, false, thresholdCallback);
 
     while (1)
     {
@@ -77,19 +78,27 @@ void app_main(void)
     /*
     // Binary LED
     binary_led_component *binary_led1 = binary_led_init(BINARY_LED_MODE, BINARY_LED_PIN, BINARY_LED_PULL_DOWN, BINARY_LED_PULL_UP);
-    // binary_led_setLed(binary_led1, 0);
+    binary_led_setLed(binary_led1, 0);
 
     // Start blink:
-    binary_led_blink(binary_led1, 500, 500);
+    binary_led_blink(binary_led1, 500, 3000);
+    // binary_led_setLed(binary_led1, 1);
     while (1)
     {
 
     binary_led_update(binary_led1);
     vTaskDelay(pdMS_TO_TICKS(50));
-     }
-     */
-
-    /*
-    // Analog LED
+    }
     */
+
+    // Analog LED
+    analog_led_component *analog_led1 = analog_led_init(ANALOG_LED_PIN, ANALOG_LED_HERTZ, ANALOG_LED_SPEED_MODE, ANALOG_LED_TIMER_NUM, ANALOG_LED_CHANNEL, ANALOG_LED_DUTY_RANGE, ANALOG_FADE_DURATION);
+    // analog_setLed(analog_led1, ANALOG_OFF);
+    int period = 100;
+    analog_sin(analog_led1, period);
+    while (1)
+    {
+        analog_led_update(analog_led1);
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
 }
