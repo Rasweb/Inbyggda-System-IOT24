@@ -28,6 +28,7 @@ typedef struct
     uint32_t fade_duration;
     analog_led_state_t next_state;
     analog_led_state_t pre_state;
+    int duty;
     float angle;
     int period;
 } analog_led_component;

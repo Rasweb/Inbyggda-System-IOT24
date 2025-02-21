@@ -40,6 +40,7 @@ analog_led_component *analog_led_init(int pin, uint32_t freq_hertz, ledc_mode_t 
     new_binary_led->fade_duration = fade_duration;
     new_binary_led->angle = 0.0;
     new_binary_led->period = 100;
+    new_binary_led->duty = 0;
     return new_binary_led;
 };
 void analog_led_update(analog_led_component *led)
@@ -47,28 +48,31 @@ void analog_led_update(analog_led_component *led)
     TickType_t current_time = xTaskGetTickCount();
     int fade = 50;
     // printf("state: %d", led->state);
-    ESP_LOGI("MAIN", "Current State: %d, Next State: %d", led->state, led->next_state);
+    // ESP_LOGI("MAIN", "Current State: %d, Next State: %d", led->state, led->next_state);
     switch (led->state)
     {
     case ANALOG_OFF:
         ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(led->speed_mode, led->channel, 0));
         ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(led->speed_mode, led->channel));
+        led->next_state = ANALOG_OFF;
         break;
     case ANALOG_ON:
-        ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(led->speed_mode, led->channel, MAX_DUTY));
+        ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(led->speed_mode, led->channel, led->duty));
         ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(led->speed_mode, led->channel));
+        ESP_LOGI("MAIN", "analog on duty: %d", led->duty);
+        led->next_state = ANALOG_ON;
         break;
     case ANALOG_FADE_IN:
         if ((current_time - led->stateChangeTime) >= pdMS_TO_TICKS(led->fade_duration))
         {
-            duty += fade;
-            // printf("fade in %d", duty);
-            if (duty >= MAX_DUTY)
+            ESP_LOGI("MAIN", "fade in duty: %d", led->duty);
+            led->duty += fade;
+            if (led->duty >= MAX_DUTY)
             {
-                duty = MAX_DUTY;
+                led->duty = MAX_DUTY;
                 led->next_state = ANALOG_FADE_OUT;
             }
-            ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(led->speed_mode, led->channel, duty));
+            ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(led->speed_mode, led->channel, led->duty));
             ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(led->speed_mode, led->channel));
             led->stateChangeTime = current_time;
         }
@@ -79,14 +83,14 @@ void analog_led_update(analog_led_component *led)
     case ANALOG_FADE_OUT:
         if (current_time - led->stateChangeTime > pdMS_TO_TICKS(led->fade_duration))
         {
-            duty -= fade;
-            // printf("fade out %d", duty);
-            if (duty <= 0)
+            ESP_LOGI("MAIN", "fade out duty: %d", led->duty);
+            led->duty -= fade;
+            if (led->duty <= 0)
             {
-                duty = 0;
+                led->duty = 0;
                 led->next_state = ANALOG_FADE_IN;
             }
-            ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(led->speed_mode, led->channel, duty));
+            ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(led->speed_mode, led->channel, led->duty));
             ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(led->speed_mode, led->channel));
             led->stateChangeTime = current_time;
         }
@@ -94,8 +98,9 @@ void analog_led_update(analog_led_component *led)
             led->next_state = ANALOG_FADE_OUT;
         break;
     case ANALOG_SIN_WAVE:
-        printf("Duty: %d", duty);
-        // Updatera angle för sin uträkningen
+        ESP_LOGI("MAIN", "Sin wave duty: %d", duty);
+        // Updatera vinkel för sin uträkningen
+        // led->period är bestämer vinkel tiden
         led->angle += ((2 * M_PI) / led->period);
         // Titta om angle har fulföljt ett helt varv
         if (led->angle >= 2 * M_PI)
@@ -110,6 +115,7 @@ void analog_led_update(analog_led_component *led)
         ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(led->speed_mode, led->channel, duty));
         ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(led->speed_mode, led->channel));
         led->stateChangeTime = current_time;
+        led->next_state = ANALOG_SIN_WAVE;
         break;
 
     default:
@@ -121,22 +127,44 @@ void analog_led_update(analog_led_component *led)
 }
 void analog_setLed(analog_led_component *led, int value)
 {
-    // led->state = value;
-    if (value == ANALOG_ON)
-        led->state = ANALOG_ON;
-    else if (value == ANALOG_OFF)
-        led->state = ANALOG_OFF;
-    else if (value == ANALOG_FADE_IN)
-        led->state = ANALOG_FADE_IN;
-    else if (value == ANALOG_FADE_OUT)
-        led->state = ANALOG_FADE_OUT;
-    else if (value == ANALOG_SIN_WAVE)
-        led->state = ANALOG_SIN_WAVE;
+    led->state = ANALOG_ON;
+    led->duty = value;
 }
 void analog_sin(analog_led_component *led, int period)
 {
-    printf("State in sin: %d", led->state);
     led->state = ANALOG_SIN_WAVE;
     led->period = period;
     led->stateChangeTime = xTaskGetTickCount();
 }
+
+// För framtida kod, om man vill sätta specifika värden för olika state
+// void analog_setLed(analog_led_component *led, analog_led_state_t state, int value)
+// {
+//     if (state == ANALOG_OFF)
+//     {
+//         led->state = ANALOG_OFF;
+//         led->duty = 0;
+//     }
+//     else if (state == ANALOG_ON)
+
+//     {
+//         led->state = ANALOG_ON;
+//         led->duty = value;
+//     }
+//     else if (state == ANALOG_FADE_IN)
+//     {
+//         led->state = ANALOG_FADE_IN;
+//         led->duty = value;
+//     }
+//     else if (state == ANALOG_FADE_OUT)
+//     {
+//         led->state = ANALOG_FADE_OUT;
+//         led->duty = value;
+//     }
+//     else if (state == ANALOG_SIN_WAVE)
+//     {
+//         led->state = ANALOG_SIN_WAVE;
+//         led->angle = value;
+//         analog_sin(led, 100);
+//     }
+// }

@@ -93,12 +93,17 @@ void app_main(void)
 
     // Analog LED
     analog_led_component *analog_led1 = analog_led_init(ANALOG_LED_PIN, ANALOG_LED_HERTZ, ANALOG_LED_SPEED_MODE, ANALOG_LED_TIMER_NUM, ANALOG_LED_CHANNEL, ANALOG_LED_DUTY_RANGE, ANALOG_FADE_DURATION);
-    // analog_setLed(analog_led1, ANALOG_OFF);
-    int period = 100;
+    // analog_setLed(analog_led1, ANALOG_FADE_IN);
+
+    int period = 5;
+    // int d = pdMS_TO_TICKS(100);
     analog_sin(analog_led1, period);
+    analog_setLed(analog_led1, 2000);
+    // analog_setLed(analog_led1, ANALOG_FADE_IN);
+
     while (1)
     {
         analog_led_update(analog_led1);
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
