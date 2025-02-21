@@ -137,6 +137,15 @@ void analog_sin(analog_led_component *led, int period)
     led->stateChangeTime = xTaskGetTickCount();
 }
 
+void binary_destroy(analog_led_component *led)
+{
+    if (led != NULL)
+    {
+        vPortFree(led);
+        led = NULL;
+    }
+}
+
 // För framtida kod, om man vill sätta specifika värden för olika state
 // void analog_setLed(analog_led_component *led, analog_led_state_t state, int value)
 // {
