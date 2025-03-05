@@ -28,20 +28,20 @@ analog_led_component *analog_led_init(int pin, uint32_t freq_hertz, ledc_mode_t 
     };
     ledc_channel_config(&ledcChannelConfig);
 
-    analog_led_component *new_binary_led = pvPortMalloc(sizeof(analog_led_component));
-    new_binary_led->pin = pin;
-    new_binary_led->freq_hertz = freq_hertz;
-    new_binary_led->speed_mode = speed_mode;
-    new_binary_led->timer_num = timer_num;
-    new_binary_led->channel = channel;
-    new_binary_led->duty_range = duty_range;
-    new_binary_led->state = ANALOG_OFF;
-    new_binary_led->stateChangeTime = 0;
-    new_binary_led->fade_duration = fade_duration;
-    new_binary_led->angle = 0.0;
-    new_binary_led->period = 100;
-    new_binary_led->duty = 0;
-    return new_binary_led;
+    analog_led_component *new_analog_led = pvPortMalloc(sizeof(analog_led_component));
+    new_analog_led->pin = pin;
+    new_analog_led->freq_hertz = freq_hertz;
+    new_analog_led->speed_mode = speed_mode;
+    new_analog_led->timer_num = timer_num;
+    new_analog_led->channel = channel;
+    new_analog_led->duty_range = duty_range;
+    new_analog_led->state = ANALOG_OFF;
+    new_analog_led->stateChangeTime = 0;
+    new_analog_led->fade_duration = fade_duration;
+    new_analog_led->angle = 0.0;
+    new_analog_led->period = 100;
+    new_analog_led->duty = 0;
+    return new_analog_led;
 };
 void analog_led_update(analog_led_component *led)
 {
