@@ -21,6 +21,7 @@ potentiometer *pot_init(PIN_GPIO pin, CHANNEL_TYPE channel)
     potentiometer *new_pot = pvPortMalloc(sizeof(potentiometer));
     new_pot->pin = pin;
     new_pot->onThresholdCallback = NULL;
+    new_pot->beforeThresholdCallback = NULL;
     new_pot->threshold = 0;
     new_pot->lastValue = 0;
     new_pot->adc_raw = 0;
@@ -48,9 +49,9 @@ void pot_update(potentiometer *pot)
     else
     {
         // Om nurvarande värde understiger gränsen
-        if (pot->fallingEdge && pot->onThresholdCallback != NULL && pot->thresholdState)
+        if (pot->fallingEdge && pot->beforeThresholdCallback != NULL && pot->thresholdState)
         {
-            pot->onThresholdCallback(pot->adc_raw);
+            pot->beforeThresholdCallback(pot->adc_raw);
             pot->thresholdState = false;
         }
     }
@@ -90,9 +91,10 @@ int pot_getValue(potentiometer *pot)
     return pot->lastValue;
 }
 
-void pot_setOnThreshold(potentiometer *pot, THRESHOLD threshold, bool after, bool before, void (*onThreshold)())
+void pot_setOnThreshold(potentiometer *pot, THRESHOLD threshold, bool after, bool before, void (*onThreshold)(), void (*beforeThreshold)())
 {
     pot->onThresholdCallback = onThreshold;
+    pot->beforeThresholdCallback = beforeThreshold;
     pot->threshold = threshold;
     pot->risingEdge = after;
     pot->fallingEdge = before;

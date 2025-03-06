@@ -13,6 +13,7 @@ typedef struct
     PIN_GPIO pin;
     int lastValue;
     void (*onThresholdCallback)(int value);
+    void (*beforeThresholdCallback)(int value);
     int adc_raw;
     int threshold;
     bool risingEdge;     // Kallar funktionen när den överstiger gränsen.
@@ -27,5 +28,5 @@ typedef struct
 potentiometer *pot_init(PIN_GPIO pin, CHANNEL_TYPE channel);
 void pot_update(potentiometer *pot);
 int pot_getValue(potentiometer *pot);
-void pot_setOnThreshold(potentiometer *pot, THRESHOLD threshold, bool after, bool before, void (*onThreshold)());
+void pot_setOnThreshold(potentiometer *pot, THRESHOLD threshold, bool after, bool before, void (*onThreshold)(), void (*beforeThreshold)());
 void pot_destroy(potentiometer *pot);

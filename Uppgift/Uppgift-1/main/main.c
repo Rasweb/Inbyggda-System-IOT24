@@ -11,7 +11,7 @@
 #define INTR_TYPE_VAL GPIO_INTR_DISABLE
 
 #define POT_THRESHOLD 3000
-#define CHANNEL ADC_CHANNEL_3
+#define CHANNEL ADC_CHANNEL_2
 
 #define BINARY_LED_MODE GPIO_MODE_OUTPUT
 #define BINARY_LED_PIN GPIO_NUM_4
@@ -39,11 +39,15 @@ void callbackFunc(int pin)
     printf("Tryck: %d\n", pin);
 }
 
-void thresholdCallback(int value)
+void onThresholdCallback(int value)
 {
-    ESP_LOGI("MAIN", "Threshold reached %d", value);
+    ESP_LOGI("MAIN", "Rising Edge %d", value);
 }
 
+void beforeThresholdCallback(int value)
+{
+    ESP_LOGI("MAIN", "Falling Edge %d", value);
+}
 void app_main(void)
 {
 
@@ -59,21 +63,18 @@ void app_main(void)
     //}
     */
 
-    /*
     // Potentiometer och knapp
     potentiometer *pot1 = pot_init(GPIO_NUM_3, CHANNEL);
 
-    pot_setOnThreshold(pot1, POT_THRESHOLD, true, false, thresholdCallback);
+    pot_setOnThreshold(pot1, POT_THRESHOLD, true, true, onThresholdCallback, beforeThresholdCallback);
 
     while (1)
     {
-        btn_update(btn1);
         pot_update(pot1);
         int currentValue = pot_getValue(pot1);
-        // ESP_LOGI("MAIN", "Potentiometer Värde: %d", currentValue);
+        ESP_LOGI("MAIN", "Potentiometer Värde: %d", currentValue);
         vTaskDelay(pdMS_TO_TICKS(100));
     }
-    */
 
     /*
     // Binary LED

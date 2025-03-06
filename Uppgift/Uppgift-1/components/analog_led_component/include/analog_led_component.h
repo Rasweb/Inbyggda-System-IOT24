@@ -37,4 +37,4 @@ analog_led_component *analog_led_init(int pin, uint32_t freq_hertz, ledc_mode_t 
 void analog_led_update(analog_led_component *analog_led);
 void analog_setLed(analog_led_component *led, int value);
 void analog_sin(analog_led_component *led, int period);
-void binary_destroy(analog_led_component *led);
+void analog_destroy(analog_led_component *led);
