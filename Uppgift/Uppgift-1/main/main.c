@@ -63,7 +63,8 @@ void app_main(void)
     //}
     */
 
-    // Potentiometer och knapp
+    /*
+    // Potentiometer
     potentiometer *pot1 = pot_init(GPIO_NUM_3, CHANNEL);
 
     pot_setOnThreshold(pot1, POT_THRESHOLD, true, true, onThresholdCallback, beforeThresholdCallback);
@@ -72,9 +73,10 @@ void app_main(void)
     {
         pot_update(pot1);
         int currentValue = pot_getValue(pot1);
-        ESP_LOGI("MAIN", "Potentiometer Värde: %d", currentValue);
+        // ESP_LOGI("MAIN", "Potentiometer Värde: %d", currentValue);
         vTaskDelay(pdMS_TO_TICKS(100));
     }
+    */
 
     /*
     // Binary LED
