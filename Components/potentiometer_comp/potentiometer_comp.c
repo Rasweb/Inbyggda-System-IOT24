@@ -1,11 +1,11 @@
 #include "potentiometer_comp.h"
 
-potentiometer *pot_init(PIN_GPIO pin, CHANNEL_TYPE channel)
+adc_t *adc_init(PIN_GPIO pin, CHANNEL_TYPE channel, adc_unit_t adc_unit)
 {
     // ADC init
     adc_oneshot_unit_handle_t pot_handle;
     adc_oneshot_unit_init_cfg_t pot_conf = {
-        .unit_id = ADC_UNIT_1,
+        .unit_id = adc_unit,
         .clk_src = 0,
         .ulp_mode = ADC_ULP_MODE_DISABLE,
     };
@@ -18,22 +18,22 @@ potentiometer *pot_init(PIN_GPIO pin, CHANNEL_TYPE channel)
     };
     ESP_ERROR_CHECK_WITHOUT_ABORT(adc_oneshot_config_channel(pot_handle, channel, &config));
 
-    potentiometer *new_pot = pvPortMalloc(sizeof(potentiometer));
-    new_pot->pin = pin;
-    new_pot->onThresholdCallback = NULL;
-    new_pot->beforeThresholdCallback = NULL;
-    new_pot->threshold = 0;
-    new_pot->lastValue = 0;
-    new_pot->adc_raw = 0;
-    new_pot->risingEdge = true;
-    new_pot->fallingEdge = false;
-    new_pot->thresholdState = false;
-    new_pot->handle = pot_handle;
-    new_pot->adc_channel = channel;
-    return new_pot;
+    adc_t *new_adc = pvPortMalloc(sizeof(adc_t));
+    new_adc->pin = pin;
+    new_adc->onThresholdCallback = NULL;
+    new_adc->beforeThresholdCallback = NULL;
+    new_adc->threshold = 0;
+    new_adc->lastValue = 0;
+    new_adc->adc_raw = 0;
+    new_adc->risingEdge = true;
+    new_adc->fallingEdge = false;
+    new_adc->thresholdState = false;
+    new_adc->handle = pot_handle;
+    new_adc->adc_channel = channel;
+    return new_adc;
 }
 
-void pot_update(potentiometer *pot)
+void adc_update(adc_t *pot)
 {
     ESP_ERROR_CHECK_WITHOUT_ABORT(adc_oneshot_read(pot->handle, pot->adc_channel, &pot->adc_raw));
 
@@ -65,33 +65,13 @@ void pot_update(potentiometer *pot)
     }
     pot->lastValue = pot->adc_raw;
 }
-// void pot_update(potentiometer *pot)
-// {
-//     ESP_ERROR_CHECK_WITHOUT_ABORT(adc_oneshot_read(pot->handle, pot->adc_channel, &pot->adc_raw));
 
-//     // Nurvarande värde överstiger thresholden
-//     if (pot->adc_raw >= pot->threshold && pot->risingEdge)
-//     {
-//         if (pot->onThresholdCallback != NULL)
-//         {
-//             pot->onThresholdCallback(pot->adc_raw);
-//             // Tvingar threshold varningen att bara kallas en gång
-//             pot->risingEdge = 0;
-//         }
-//     }
-//     else if (pot->adc_raw < pot->threshold)
-//     {
-//         // Är värdet under thresholden, tillåt thresholden att kallas
-//         pot->risingEdge = 1;
-//     }
-//     pot->lastValue = pot->adc_raw;
-// }
-int pot_getValue(potentiometer *pot)
+int adc_getValue(adc_t *pot)
 {
     return pot->lastValue;
 }
 
-void pot_setOnThreshold(potentiometer *pot, THRESHOLD threshold, bool after, bool before, void (*onThreshold)(), void (*beforeThreshold)())
+void adc_setOnThreshold(adc_t *pot, THRESHOLD threshold, bool after, bool before, void (*onThreshold)(), void (*beforeThreshold)())
 {
     pot->onThresholdCallback = onThreshold;
     pot->beforeThresholdCallback = beforeThreshold;
@@ -100,7 +80,7 @@ void pot_setOnThreshold(potentiometer *pot, THRESHOLD threshold, bool after, boo
     pot->fallingEdge = before;
 }
 
-void pot_destroy(potentiometer *pot)
+void adc_destroy(adc_t *pot)
 {
     if (pot != NULL)
     {

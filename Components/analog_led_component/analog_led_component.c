@@ -2,7 +2,7 @@
 #define MAX_DUTY 4095
 int duty = 0;
 
-analog_led_component *analog_led_init(int pin, uint32_t freq_hertz, ledc_mode_t speed_mode, ledc_timer_t timer_num, ledc_channel_t channel, uint32_t duty_range, uint32_t fade_duration)
+pwm_component_t *pwm_init(int pin, uint32_t freq_hertz, ledc_mode_t speed_mode, ledc_timer_t timer_num, ledc_channel_t channel, uint32_t duty_range, uint32_t fade_duration)
 {
     // LEDC timer configuration
     ledc_timer_config_t ledcTimerConfig = {
@@ -28,121 +28,117 @@ analog_led_component *analog_led_init(int pin, uint32_t freq_hertz, ledc_mode_t 
     };
     ledc_channel_config(&ledcChannelConfig);
 
-    analog_led_component *new_analog_led = pvPortMalloc(sizeof(analog_led_component));
-    new_analog_led->pin = pin;
-    new_analog_led->freq_hertz = freq_hertz;
-    new_analog_led->speed_mode = speed_mode;
-    new_analog_led->timer_num = timer_num;
-    new_analog_led->channel = channel;
-    new_analog_led->duty_range = duty_range;
-    new_analog_led->state = ANALOG_OFF;
-    new_analog_led->stateChangeTime = 0;
-    new_analog_led->fade_duration = fade_duration;
-    new_analog_led->angle = 0.0;
-    new_analog_led->period = 100;
-    new_analog_led->duty = 0;
-    return new_analog_led;
+    pwm_component_t *new_pwm = pvPortMalloc(sizeof(pwm_component_t));
+    new_pwm->pin = pin;
+    new_pwm->freq_hertz = freq_hertz;
+    new_pwm->speed_mode = speed_mode;
+    new_pwm->timer_num = timer_num;
+    new_pwm->channel = channel;
+    new_pwm->duty_range = duty_range;
+    new_pwm->state = ANALOG_OFF;
+    new_pwm->stateChangeTime = 0;
+    new_pwm->fade_duration = fade_duration;
+    new_pwm->angle = 0.0;
+    new_pwm->period = 100;
+    new_pwm->duty = 0;
+    return new_pwm;
 };
-void analog_led_update(analog_led_component *led)
+void pwm_update(pwm_component_t *pwm)
 {
     TickType_t current_time = xTaskGetTickCount();
     int fade = 50;
     // printf("state: %d", led->state);
     // ESP_LOGI("MAIN", "Current State: %d, Next State: %d", led->state, led->next_state);
-    switch (led->state)
+    switch (pwm->state)
     {
     case ANALOG_OFF:
-        ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(led->speed_mode, led->channel, 0));
-        ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(led->speed_mode, led->channel));
-        led->next_state = ANALOG_OFF;
+        ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(pwm->speed_mode, pwm->channel, 0));
+        ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(pwm->speed_mode, pwm->channel));
+        pwm->next_state = ANALOG_OFF;
         break;
     case ANALOG_ON:
-        ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(led->speed_mode, led->channel, led->duty));
-        ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(led->speed_mode, led->channel));
-        ESP_LOGI("MAIN", "analog on duty: %d", led->duty);
-        led->next_state = ANALOG_ON;
+        ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(pwm->speed_mode, pwm->channel, pwm->duty));
+        ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(pwm->speed_mode, pwm->channel));
+        pwm->next_state = ANALOG_ON;
         break;
     case ANALOG_FADE_IN:
-        if ((current_time - led->stateChangeTime) >= pdMS_TO_TICKS(led->fade_duration))
+        if ((current_time - pwm->stateChangeTime) >= pdMS_TO_TICKS(pwm->fade_duration))
         {
-            ESP_LOGI("MAIN", "fade in duty: %d", led->duty);
-            led->duty += fade;
-            if (led->duty >= MAX_DUTY)
+            pwm->duty += fade;
+            if (pwm->duty >= MAX_DUTY)
             {
-                led->duty = MAX_DUTY;
-                led->next_state = ANALOG_FADE_OUT;
+                pwm->duty = MAX_DUTY;
+                pwm->next_state = ANALOG_FADE_OUT;
             }
-            ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(led->speed_mode, led->channel, led->duty));
-            ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(led->speed_mode, led->channel));
-            led->stateChangeTime = current_time;
+            ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(pwm->speed_mode, pwm->channel, pwm->duty));
+            ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(pwm->speed_mode, pwm->channel));
+            pwm->stateChangeTime = current_time;
         }
         else
-            led->next_state = ANALOG_FADE_IN;
+            pwm->next_state = ANALOG_FADE_IN;
         break;
 
     case ANALOG_FADE_OUT:
-        if (current_time - led->stateChangeTime > pdMS_TO_TICKS(led->fade_duration))
+        if (current_time - pwm->stateChangeTime > pdMS_TO_TICKS(pwm->fade_duration))
         {
-            ESP_LOGI("MAIN", "fade out duty: %d", led->duty);
-            led->duty -= fade;
-            if (led->duty <= 0)
+            pwm->duty -= fade;
+            if (pwm->duty <= 0)
             {
-                led->duty = 0;
-                led->next_state = ANALOG_FADE_IN;
+                pwm->duty = 0;
+                pwm->next_state = ANALOG_FADE_IN;
             }
-            ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(led->speed_mode, led->channel, led->duty));
-            ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(led->speed_mode, led->channel));
-            led->stateChangeTime = current_time;
+            ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(pwm->speed_mode, pwm->channel, pwm->duty));
+            ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(pwm->speed_mode, pwm->channel));
+            pwm->stateChangeTime = current_time;
         }
         else
-            led->next_state = ANALOG_FADE_OUT;
+            pwm->next_state = ANALOG_FADE_OUT;
         break;
     case ANALOG_SIN_WAVE:
-        ESP_LOGI("MAIN", "Sin wave duty: %d", duty);
         // Updatera vinkel för sin uträkningen
         // led->period är bestämer vinkel tiden
-        led->angle += ((2 * M_PI) / led->period);
+        pwm->angle += ((2 * M_PI) / pwm->period);
         // Titta om angle har fulföljt ett helt varv
-        if (led->angle >= 2 * M_PI)
+        if (pwm->angle >= 2 * M_PI)
         {
             // Startar ett nytt varv
-            led->angle = 0.0;
+            pwm->angle = 0.0;
         }
         // Räknar ut duty för led:en
         // Använder sin för att variera styrkan
         // Cykeln är mellan 0 och MAX_DUTY
-        duty = (MAX_DUTY / 2) + (MAX_DUTY / 2) * sin(led->angle);
-        ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(led->speed_mode, led->channel, duty));
-        ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(led->speed_mode, led->channel));
-        led->stateChangeTime = current_time;
-        led->next_state = ANALOG_SIN_WAVE;
+        duty = (MAX_DUTY / 2) + (MAX_DUTY / 2) * sin(pwm->angle);
+        ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(pwm->speed_mode, pwm->channel, duty));
+        ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(pwm->speed_mode, pwm->channel));
+        pwm->stateChangeTime = current_time;
+        pwm->next_state = ANALOG_SIN_WAVE;
         break;
 
     default:
-        ESP_LOGI("MAIN", "Unknown State: %d", led->state);
+        ESP_LOGI("MAIN", "Unknown State: %d", pwm->state);
         break;
     }
-    led->pre_state = led->state;
-    led->state = led->next_state;
+    pwm->pre_state = pwm->state;
+    pwm->state = pwm->next_state;
 }
-void analog_setLed(analog_led_component *led, int value)
+void pwm_set(pwm_component_t *pwm, int value)
 {
-    led->state = ANALOG_ON;
-    led->duty = value;
+    pwm->state = ANALOG_ON;
+    pwm->duty = value;
 }
-void analog_sin(analog_led_component *led, int period)
+void pwm_sine(pwm_component_t *pwm, int period)
 {
-    led->state = ANALOG_SIN_WAVE;
-    led->period = period;
-    led->stateChangeTime = xTaskGetTickCount();
+    pwm->state = ANALOG_SIN_WAVE;
+    pwm->period = period;
+    pwm->stateChangeTime = xTaskGetTickCount();
 }
 
-void analog_destroy(analog_led_component *led)
+void pwm_destroy(pwm_component_t *pwm)
 {
-    if (led != NULL)
+    if (pwm != NULL)
     {
-        vPortFree(led);
-        led = NULL;
+        vPortFree(pwm);
+        pwm = NULL;
     }
 }
 

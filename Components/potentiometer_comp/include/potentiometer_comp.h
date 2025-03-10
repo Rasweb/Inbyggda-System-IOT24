@@ -23,10 +23,10 @@ typedef struct
     adc_channel_t adc_channel;
     bool beforeThreshold;
     bool afterThreshold;
-} potentiometer;
+} adc_t;
 
-potentiometer *pot_init(PIN_GPIO pin, CHANNEL_TYPE channel);
-void pot_update(potentiometer *pot);
-int pot_getValue(potentiometer *pot);
-void pot_setOnThreshold(potentiometer *pot, THRESHOLD threshold, bool after, bool before, void (*onThreshold)(), void (*beforeThreshold)());
-void pot_destroy(potentiometer *pot);
+adc_t *adc_init(PIN_GPIO pin, CHANNEL_TYPE channel, adc_unit_t adc_unit);
+void adc_update(adc_t *pot);
+int adc_getValue(adc_t *pot);
+void adc_setOnThreshold(adc_t *pot, THRESHOLD threshold, bool after, bool before, void (*onThreshold)(), void (*beforeThreshold)());
+void adc_destroy(adc_t *pot);
