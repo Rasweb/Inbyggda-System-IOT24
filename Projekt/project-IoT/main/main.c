@@ -16,8 +16,6 @@
 #define POT_PIN GPIO_NUM_2
 #define POT_ADC_UNIT 0
 
-#define RGB_LED_PIN GPIO_NUM_8
-
 #define PHOTORESISTOR_CHANNEL ADC_CHANNEL_4
 #define PHOTORESISTOR_PIN GPIO_NUM_4
 #define PHOTORESISTOR_ADC_UNIT 1
@@ -33,17 +31,7 @@
 #define RGB_LED_STATE 0
 #define RGB_LED_PIN GPIO_NUM_8
 
-// För display
-// https://github.com/espressif/esp-idf/tree/v5.2.5/examples/peripherals/lcd/i2c_oled
-
-/*
-inbyggd rgb led
-passive buzzer - ljud
-photoresistor - ljusnivå - adc/analog
-potentiometer
-display - ssd1306
-*/
-
+// lv_obj_clean(src);
 void potThresholdCallback(int value)
 {
     ESP_LOGI(TAG, "Rising Edge %d", value);
@@ -51,17 +39,25 @@ void potThresholdCallback(int value)
 
 void photoresistorCallback(int value)
 {
-    ESP_LOGI(TAG, "Photoresistor callback %d", value);
+    // ESP_LOGI(TAG, "Photoresistor callback %d", value);
 }
 
 void play_melody(pwm_component_t *buzzer)
 {
-    int alarmMelody[] = {700, 900, 700, 900, 700, 900, 700, 900};   // G5, A5, G5, A5, G5, A5, G5, A5 notes
-    int noteDurations[] = {200, 200, 200, 200, 200, 200, 200, 200}; // Duration of each note in milliseconds
+
+    int alarmMelody[] = {392, 392, 392, 311, 466, 392, 311, 466, 392,    // G4, G4, G4, D#4, A#4, G4, D#4, A#4, G4
+                         587, 587, 587, 622, 466, 370, 311, 466, 392,    // D5, D5, D5, D#5, A#4, G4, D#4, A#4, G4
+                         784, 392, 392, 784, 739, 698, 659, 622, 659,    // G5, G4, G4, G5, F#5, F5, E5, D#5, E5
+                         466, 622, 587, 466, 622, 587, 466, 622, 587,    // A#4, D#5, D5, A#4, D#5, D5, A#4, D#5, D5
+                         466, 392, 311, 466, 392, 311, 466, 392, 311};   // A#4, G4, D#4, A#4, G4, D#4, A#4, G4, D#4};   // G4, G4, G4, F4, G4, C5, C5, C5, C5, G4, G4, G4, F4, G4, C5, C5, C5, G4
+    int noteDurations[] = {500, 500, 500, 350, 150, 500, 350, 150, 1000, // Durations for the first part
+                           500, 500, 500, 350, 150, 500, 350, 150, 1000, // Durations for the second part
+                           500, 350, 150, 500, 350, 150, 500, 350, 150,  // Durations for the third part
+                           1000, 500, 350, 150, 500, 350, 150, 500, 350, // Durations for the fourth part
+                           150, 500, 350, 150, 500, 350, 150, 500, 350}; // Durations for the fifth part}; // Each note lasts 500 ms
 
     for (int i = 0; i < sizeof(alarmMelody) / sizeof(alarmMelody[0]); i++)
-    {
-        // Manually set frequency and duty cycle
+    { // Manually set frequency and duty cycle
         ledc_set_freq(LEDC_MODE, LEDC_TIMER, alarmMelody[i]);
         ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 2048); // 50% duty cycle (4096/2)
         ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
@@ -72,8 +68,7 @@ void play_melody(pwm_component_t *buzzer)
         ledc_set_duty(LEDC_MODE, LEDC_CHANNEL, 0);
         ledc_update_duty(LEDC_MODE, LEDC_CHANNEL);
 
-        vTaskDelay(pdMS_TO_TICKS(10)); // Short pause between notes
-        /* code */
+        vTaskDelay(pdMS_TO_TICKS(100)); // Short pause between notes
     }
 }
 
@@ -102,51 +97,48 @@ void app_main(void)
 
     onboard_rgb_led_t *rgb_led = rgb_led_init(RGB_LED_STATE, NULL, RGB_LED_PIN);
     rgb_led_configure(rgb_led);
+    display_init();
+
+    TickType_t last_wake_time = xTaskGetTickCount();
 
     while (1)
     {
-
         adc_update(photoresistor);
         adc_update(pot);
         int currentValue = adc_getValue(pot);
-        // ESP_LOGI("MAIN", "Potentiometer Value: %d", currentValue);
+        ESP_LOGI("MAIN", "Potentiometer Value: %d", currentValue);
         adc_setOnThreshold(photoresistor, currentValue, true, false, photoresistorCallback, NULL);
 
         int currentValueSens = adc_getValue(photoresistor);
-        ESP_LOGI("MAIN", "Sensor Value: %d", currentValueSens);
+
         pwm_update(buzzer);
-        rgb_led_update(rgb_led);
-        if (currentValueSens <= 800)
+
+        rgb_led_update_buffer(rgb_led, currentValueSens);
+        int test = currentValue;
+        int close = currentValue - 400;
+
+        if (xTaskGetTickCount() - last_wake_time >= pdMS_TO_TICKS(CHECK_INTERVAL_MS))
         {
-            play_melody(buzzer);
-            rgb_led->led_state = 1;
+            last_wake_time = xTaskGetTickCount();
+            int averageValue = rgb_led_buffer_average(rgb_led);
+            ESP_LOGI("MAIN", "Average Sensor Value: %d", averageValue);
+            if (averageValue <= currentValue)
+            {
+                play_melody(buzzer);
+                rgb_led->led_state = 1;
+            }
+            else if (averageValue <= close)
+            {
+                rgb_led->led_state = 2;
+            }
+            else
+            {
+                pwm_set(buzzer, 0);
+                rgb_led->led_state = 0;
+            }
+            rgb_led_set_state(rgb_led);
         }
-        else
-        {
-            pwm_set(buzzer, 0);
-            rgb_led->led_state = 0;
-            // rgb_led_update(rgb_led);
-        }
+
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
-
-// while (1)
-// {
-
-// }
-
-/*
-// Potentiometer
-potentiometer *pot1 = pot_init(POT_PIN, POT_CHANNEL);
-
-pot_setOnThreshold(pot1, POT_THRESHOLD, true, false, onThresholdCallback, NULL);
-
-while (1)
-{
-   pot_update(pot1);
-   int currentValue = pot_getValue(pot1);
-   // ESP_LOGI("MAIN", "Potentiometer Värde: %d", currentValue);
-   vTaskDelay(pdMS_TO_TICKS(100));
-}
-*/
