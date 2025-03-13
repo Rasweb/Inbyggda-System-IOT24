@@ -4,7 +4,6 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #define BUFFER_SIZE 10
-#define CHECK_INTERVAL_MS 3000
 
 typedef void (*warning_value_callback_t)(void *buzzer);
 typedef void (*normal_value_callback)(void *buzzer, int value);

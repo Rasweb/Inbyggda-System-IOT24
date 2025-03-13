@@ -29,13 +29,17 @@
 #define EXAMPLE_LCD_CMD_BITS 8
 #define EXAMPLE_LCD_PARAM_BITS 8
 
+/*
+    Screen conf from:
+        https://docs.lvgl.io/master/index.html
+*/
 typedef struct
 {
     lv_disp_t *disp;
 } display_component_t;
 
-void display_ui(display_component_t *display);
+void display_ui(display_component_t *display, int state, int average_value, int pot_value);
 
 display_component_t *display_init();
 
-void free_display(display_component_t *display);
+void display_free(display_component_t *display);
