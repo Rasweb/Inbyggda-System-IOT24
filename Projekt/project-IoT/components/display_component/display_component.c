@@ -1,6 +1,6 @@
 #include "display_component.h"
 
-display_component_t *display_init()
+display_component_t *display_init(int sda_pin, int scl_pin)
 {
     ESP_LOGI(TAG, "Initialize I2C bus");
     i2c_master_bus_handle_t i2c_bus = NULL;
@@ -8,8 +8,8 @@ display_component_t *display_init()
         .clk_source = I2C_CLK_SRC_DEFAULT,
         .glitch_ignore_cnt = 7,
         .i2c_port = I2C_BUS_PORT,
-        .sda_io_num = EXAMPLE_PIN_NUM_SDA,
-        .scl_io_num = EXAMPLE_PIN_NUM_SCL,
+        .sda_io_num = sda_pin,
+        .scl_io_num = scl_pin,
         .flags.enable_internal_pullup = true,
     };
     esp_err_t err = i2c_new_master_bus(&bus_config, &i2c_bus);
@@ -21,12 +21,12 @@ display_component_t *display_init()
     ESP_LOGI(TAG, "Install panel IO");
     esp_lcd_panel_io_handle_t io_handle = NULL;
     esp_lcd_panel_io_i2c_config_t io_config = {
-        .dev_addr = EXAMPLE_I2C_HW_ADDR,
-        .scl_speed_hz = EXAMPLE_LCD_PIXEL_CLOCK_HZ,
-        .control_phase_bytes = 1,               // According to SSD1306 datasheet
-        .lcd_cmd_bits = EXAMPLE_LCD_CMD_BITS,   // According to SSD1306 datasheet
-        .lcd_param_bits = EXAMPLE_LCD_CMD_BITS, // According to SSD1306 datasheet
-        .dc_bit_offset = 6,                     // According to SSD1306 datasheet
+        .dev_addr = I2C_HW_ADDR,
+        .scl_speed_hz = LCD_PIXEL_CLOCK_HZ,
+        .control_phase_bytes = 1,       // According to SSD1306 datasheet
+        .lcd_cmd_bits = LCD_CMD_BITS,   // According to SSD1306 datasheet
+        .lcd_param_bits = LCD_CMD_BITS, // According to SSD1306 datasheet
+        .dc_bit_offset = 6,             // According to SSD1306 datasheet
     };
 
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c(i2c_bus, &io_config, &io_handle));
@@ -35,11 +35,11 @@ display_component_t *display_init()
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_panel_dev_config_t panel_config = {
         .bits_per_pixel = 1,
-        .reset_gpio_num = EXAMPLE_PIN_NUM_RST,
+        .reset_gpio_num = RST_PIN_NUM,
     };
 
     esp_lcd_panel_ssd1306_config_t ssd1306_config = {
-        .height = EXAMPLE_LCD_V_RES,
+        .height = LCD_V_RES,
     };
     panel_config.vendor_config = &ssd1306_config;
     ESP_ERROR_CHECK(esp_lcd_new_panel_ssd1306(io_handle, &panel_config, &panel_handle));
@@ -55,10 +55,10 @@ display_component_t *display_init()
     const lvgl_port_display_cfg_t disp_cfg = {
         .io_handle = io_handle,
         .panel_handle = panel_handle,
-        .buffer_size = EXAMPLE_LCD_H_RES * EXAMPLE_LCD_V_RES,
+        .buffer_size = LCD_H_RES * LCD_V_RES,
         .double_buffer = true,
-        .hres = EXAMPLE_LCD_H_RES,
-        .vres = EXAMPLE_LCD_V_RES,
+        .hres = LCD_H_RES,
+        .vres = LCD_V_RES,
         .monochrome = true,
         .rotation = {
             .swap_xy = false,

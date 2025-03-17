@@ -15,19 +15,16 @@
 
 #define TAG "Display"
 #define I2C_BUS_PORT 0
-#define EXAMPLE_LCD_PIXEL_CLOCK_HZ (400 * 1000)
-#define EXAMPLE_PIN_NUM_SDA 6
-#define EXAMPLE_PIN_NUM_SCL 7
-#define EXAMPLE_PIN_NUM_RST -1
-#define EXAMPLE_I2C_HW_ADDR 0x3C
+#define LCD_PIXEL_CLOCK_HZ (400 * 1000)
+#define RST_PIN_NUM -1
+#define I2C_HW_ADDR 0x3C
 
 // The pixel number in horizontal and vertical
-#define EXAMPLE_LCD_H_RES 128
-#define EXAMPLE_LCD_V_RES 64
+#define LCD_H_RES 128
+#define LCD_V_RES 64
 
 // Bit number used to represent command and parameter
-#define EXAMPLE_LCD_CMD_BITS 8
-#define EXAMPLE_LCD_PARAM_BITS 8
+#define LCD_CMD_BITS 8
 
 /*
     Screen conf from:
@@ -40,6 +37,6 @@ typedef struct
 
 void display_ui(display_component_t *display, int state, int average_value, int pot_value);
 
-display_component_t *display_init();
+display_component_t *display_init(int sda_pin, int scl_pin);
 
 void display_free(display_component_t *display);

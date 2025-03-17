@@ -1,1 +1,0 @@
-#include "photoresistor_component.h"

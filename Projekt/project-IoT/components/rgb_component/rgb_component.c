@@ -51,7 +51,7 @@ static void rgb_led_color(onboard_rgb_led_t *led)
     else if (led->led_state == 2)
     {
         /* Set the LED pixel using RGB from 0 (0%) to 255 (100%) for each color */
-        led_strip_set_pixel(led->led_strip, 0, 255, 128, 0);
+        led_strip_set_pixel(led->led_strip, 0, 230, 29, 0);
         /* Refresh the strip to send data */
         led_strip_refresh(led->led_strip);
     }
@@ -67,7 +67,7 @@ void rgb_led_set_state(onboard_rgb_led_t *led)
     // ESP_LOGI(TAG, "Turning the LED %s!", s_led_state == true ? "ON" : "OFF");
     rgb_led_color(led);
     /* Toggle the LED state */
-    led->led_state = !led->led_state;
+    // led->led_state = !led->led_state;
     vTaskDelay(pdMS_TO_TICKS(10));
 }
 
