@@ -10,12 +10,6 @@ onboard_rgb_led_t *rgb_led_init(uint8_t led_state, led_strip_handle_t led_strip,
     new_led->led_state = led_state;
     new_led->led_strip = led_strip;
     new_led->led_pin = led_pin;
-    new_led->buffer_index = 0;
-    new_led->buffer_sum = 0;
-    for (int i = 0; i < BUFFER_SIZE; i++)
-    {
-        new_led->buffer[i] = 0; // Initialize buffer values to 0
-    }
     return new_led;
 }
 
@@ -71,16 +65,7 @@ void rgb_led_set_state(onboard_rgb_led_t *led)
     vTaskDelay(pdMS_TO_TICKS(10));
 }
 
-void rgb_led_update_buffer(onboard_rgb_led_t *led, int value)
+void rgb_led_free(onboard_rgb_led_t *led)
 {
-    led->buffer_sum -= led->buffer[led->buffer_index];
-    led->buffer[led->buffer_index] = value;
-    led->buffer_sum += value;
-    led->buffer_index = (led->buffer_index + 1) % BUFFER_SIZE;
-}
-
-int rgb_led_buffer_average(onboard_rgb_led_t *led)
-{
-    int res = led->buffer_sum / BUFFER_SIZE;
-    return res;
+    vPortFree(led);
 }

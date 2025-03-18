@@ -108,12 +108,12 @@ void display_ui(display_component_t *display, int state, int average_value, int 
     lv_label_set_text_static(label, status_buffer);
 
     lv_obj_t *label1 = lv_label_create(scr);
-    lv_label_set_text_fmt(label1, "Average: %d", average_value);
+    lv_label_set_text_fmt(label1, "Sensor Avg: %d", average_value);
     lv_label_set_long_mode(label1, LV_LABEL_LONG_SCROLL);
     lv_obj_align(label1, LV_ALIGN_CENTER, 0, 0);
 
     lv_obj_t *label2 = lv_label_create(scr);
-    lv_label_set_text_fmt(label2, "Pot Value: %d", pot_value);
+    lv_label_set_text_fmt(label2, "Alarm Limit: %d", pot_value);
     lv_label_set_long_mode(label2, LV_LABEL_LONG_SCROLL);
     lv_obj_align(label2, LV_ALIGN_BOTTOM_MID, 0, 0);
 }

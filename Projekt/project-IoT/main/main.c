@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
-#include "melody_component.h"
 #include "potentiometer_comp.h"
 #include "display_component.h"
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 #include "rgb_component.h"
-#include "analog_led_component.h"
+#include "pwm_component.h"
 
 #define TAG "MAIN"
 
@@ -16,11 +15,13 @@
 #define POT_CHANNEL ADC_CHANNEL_2
 #define POT_PIN GPIO_NUM_2
 #define POT_ADC_UNIT 0
+#define POT_BUFFER_SIZE 10
 
 // Sensor component
 #define PHOTORESISTOR_CHANNEL ADC_CHANNEL_4
 #define PHOTORESISTOR_PIN GPIO_NUM_4
 #define PHOTORESISTOR_ADC_UNIT 1
+#define PHOTORESISTOR_BUFFER_SIZE 10
 
 // Buzzer component
 #define BUZZER_PIN GPIO_NUM_18
@@ -44,7 +45,7 @@ void app_main(void)
     gpio_set_level(RGB_LED_PIN, 0);
 
     // Pot component
-    adc_t *pot = adc_init(POT_PIN, POT_CHANNEL, POT_ADC_UNIT);
+    adc_t *pot = adc_init(POT_PIN, POT_CHANNEL, POT_ADC_UNIT, POT_BUFFER_SIZE);
     if (pot == NULL)
     {
         ESP_LOGE(TAG, "Failed to initialize potentiometer ADC");
@@ -52,7 +53,7 @@ void app_main(void)
     }
 
     // Sensor component
-    adc_t *photoresistor = adc_init(PHOTORESISTOR_PIN, PHOTORESISTOR_CHANNEL, PHOTORESISTOR_ADC_UNIT);
+    adc_t *photoresistor = adc_init(PHOTORESISTOR_PIN, PHOTORESISTOR_CHANNEL, PHOTORESISTOR_ADC_UNIT, PHOTORESISTOR_BUFFER_SIZE);
     if (photoresistor == NULL)
     {
         ESP_LOGE(TAG, "Failed to initialize photoresistor ADC");
@@ -76,59 +77,61 @@ void app_main(void)
     // Display
     display_component_t *new_display = display_init(DISPLAY_PIN_NUM_SDA, DISPLAY_PIN_NUM_SCL);
 
-    melody_component_t *new_melody = melody_init();
     TickType_t last_check_time = xTaskGetTickCount();
     while (1)
     {
         // Sensor and pot update
         adc_update(photoresistor);
         adc_update(pot);
-        update_melody(new_melody, buzzer);
 
         // Get Pot value and use it in sensor
         int current_pot_value = adc_getValue(pot);
-        adc_setOnThreshold(photoresistor, current_pot_value, true, false, NULL, NULL);
+        adc_update_buffer(pot, current_pot_value);
+        int average_pot_value = adc_buffer_average(pot);
+        adc_setOnThreshold(photoresistor, average_pot_value, true, false, NULL, NULL);
 
         int current_sensor_value = adc_getValue(photoresistor);
 
         pwm_update(buzzer);
-        rgb_led_update_buffer(rgb_led, current_sensor_value);
+        adc_update_buffer(photoresistor, current_sensor_value);
 
         // Check if time has passed acording to CHECK_INTERVAL_MS macro
         if (xTaskGetTickCount() - last_check_time >= pdMS_TO_TICKS(CHECK_INTERVAL_MS))
         {
             last_check_time = xTaskGetTickCount();
-            // Get the 10 average values from sensor
-            int average_value = rgb_led_buffer_average(rgb_led);
+            int average_value = adc_buffer_average(photoresistor);
 
-            int close = current_pot_value - 400;
-            if (average_value >= current_pot_value)
+            int close = average_pot_value - 400;
+            if (average_value >= average_pot_value)
             {
                 rgb_led->led_state = 1;
-                ESP_LOGI("MAIN", "LED State set to 1 (Red)");
-                display_ui(new_display, 1, average_value, current_pot_value);
+                ESP_LOGI("MAIN", "LED State set to 1 (Alert)");
+                display_ui(new_display, 1, average_value, average_pot_value);
                 rgb_led_set_state(rgb_led);
-                // play_melody(buzzer, rgb_led);
-                set_melody_state(new_melody, MELODY_PLAYING, 100);
+                pwm_set_melody(buzzer, 2048, PWM_MELODY_PLAYING);
             }
             else if (average_value >= close)
             {
                 rgb_led->led_state = 2;
-                ESP_LOGI("MAIN", "LED State set to 2 (Yellow)");
-                display_ui(new_display, 2, average_value, current_pot_value);
+                display_ui(new_display, 2, average_value, average_pot_value);
+                ESP_LOGI("MAIN", "LED State set to 2 (Rising)");
                 rgb_led_set_state(rgb_led);
+                pwm_set_melody(buzzer, 0, PWM_OFF);
             }
             else
             {
-                display_ui(new_display, 0, average_value, current_pot_value);
+                display_ui(new_display, 0, average_value, average_pot_value);
                 rgb_led->led_state = 0;
-                pwm_set(buzzer, 0);
-                ESP_LOGI("MAIN", "LED State set to 0 (Off)");
+                ESP_LOGI("MAIN", "LED State set to 0 (Safe)");
                 rgb_led_set_state(rgb_led);
-                set_melody_state(new_melody, MELODY_OFF, 0);
+                pwm_set_melody(buzzer, 0, PWM_OFF);
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
+    adc_destroy(pot);
+    adc_destroy(photoresistor);
+    rgb_led_free(rgb_led);
+    pwm_free(buzzer);
     display_free(new_display);
 }

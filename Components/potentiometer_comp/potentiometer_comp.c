@@ -1,6 +1,6 @@
 #include "potentiometer_comp.h"
 
-adc_t *adc_init(PIN_GPIO pin, CHANNEL_TYPE channel, adc_unit_t adc_unit)
+adc_t *adc_init(PIN_GPIO pin, CHANNEL_TYPE channel, adc_unit_t adc_unit, int bufferSize)
 {
     // ADC init
     adc_oneshot_unit_handle_t pot_handle;
@@ -30,6 +30,19 @@ adc_t *adc_init(PIN_GPIO pin, CHANNEL_TYPE channel, adc_unit_t adc_unit)
     new_adc->thresholdState = false;
     new_adc->handle = pot_handle;
     new_adc->adc_channel = channel;
+    new_adc->buffer_index = 0;
+    new_adc->buffer_sum = 0;
+    new_adc->buffer_size = bufferSize;
+
+    new_adc->buffer = (int *)malloc(bufferSize * sizeof(int));
+    if (new_adc->buffer == NULL)
+    {
+        ESP_LOGI("POT", "Error allocating buffer size");
+    }
+    for (int i = 0; i < bufferSize; i++)
+    {
+        new_adc->buffer[i] = 0;
+    }
     return new_adc;
 }
 
@@ -80,10 +93,27 @@ void adc_setOnThreshold(adc_t *pot, THRESHOLD threshold, bool after, bool before
     pot->fallingEdge = before;
 }
 
+// Updates buffer with a new value
+void adc_update_buffer(adc_t *pot, int value)
+{
+
+    pot->buffer_sum -= pot->buffer[pot->buffer_index];
+    pot->buffer[pot->buffer_index] = value;
+    pot->buffer_sum += value;
+    pot->buffer_index = (pot->buffer_index + 1) % pot->buffer_size;
+}
+
+int adc_buffer_average(adc_t *pot)
+{
+    int res = pot->buffer_sum / pot->buffer_size;
+    return res;
+}
+
 void adc_destroy(adc_t *pot)
 {
     if (pot != NULL)
     {
+        free(pot->buffer);
         vPortFree(pot);
         pot = NULL;
     }
