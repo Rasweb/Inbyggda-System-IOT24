@@ -21,6 +21,7 @@ button_component *btn_init(PIN_TYPE pin, gpio_pull_down_mode pull_down, gpio_pul
     new_btn->stateChangeTime = 0;
     new_btn->onReleasedCallback = NULL;
     new_btn->onPressedCallback = NULL;
+    new_btn->onPressed_arg = NULL;
     ESP_ERROR_CHECK_WITHOUT_ABORT(gpio_config(&button_config));
     return new_btn;
 };
@@ -47,8 +48,8 @@ void btn_update(button_component *btn)
                 btn->state = STATE_PRESSED;
                 btn->stateChangeTime = current_time;
                 ESP_LOGI(TAG, "Button Pressed, entering STATE_PRESSED");
-                if (btn->onPressedCallback != NULL)
-                    btn->onPressedCallback(btn->btn_pin);
+                // if (btn->onPressedCallback != NULL)
+                //     btn->onPressedCallback(btn->btn_pin, btn->onPressed_arg);
             }
             else
             {
@@ -64,6 +65,8 @@ void btn_update(button_component *btn)
             btn->state = STATE_RELEASE_DEBOUNCE;
             btn->stateChangeTime = current_time;
             ESP_LOGI(TAG, "Entering STATE_RELEASE_DEBOUNCE");
+            if (btn->onPressedCallback != NULL)
+                btn->onPressedCallback(btn->btn_pin, btn->onPressed_arg);
         }
         break;
     case STATE_RELEASE_DEBOUNCE:
@@ -96,9 +99,10 @@ int btn_isPressed(button_component *btn)
     return (btn->state == STATE_PRESSED) ? 1 : 0;
 };
 
-void btn_setOnPressed(button_component *btn, void (*onPressed)(int pin))
+void btn_setOnPressed(button_component *btn, void (*onPressed)(int pin, void *arg), void *arg)
 {
     btn->onPressedCallback = onPressed;
+    btn->onPressed_arg = arg;
 };
 
 void btn_destroy(button_component *btn)

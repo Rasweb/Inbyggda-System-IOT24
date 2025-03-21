@@ -35,7 +35,7 @@ typedef struct
     lv_disp_t *disp;
 } display_component_t;
 
-void display_ui(display_component_t *display, int state, int average_value, int pot_value);
+void display_ui(display_component_t *display, int state, int average_value, int pot_value, bool sleep);
 
 display_component_t *display_init(int sda_pin, int scl_pin);
 

@@ -1,9 +1,10 @@
-#define CONFIG_BLINK_LED_STRIP 1
 #include <stdio.h>
 #include "led_strip.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
-#define BUFFER_SIZE 10
+#define CONFIG_BLINK_LED_STRIP 1 #define CONFIG_BLINK_LED_STRIP_BACKEND_SPI 1
+#define CONFIG_BLINK_LED_STRIP_BACKEND_RMT 1
+#define TAG "RGB"
 
 typedef void (*warning_value_callback_t)(void *buzzer);
 typedef void (*normal_value_callback)(void *buzzer, int value);

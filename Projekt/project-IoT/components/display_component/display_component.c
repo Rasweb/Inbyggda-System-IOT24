@@ -76,7 +76,7 @@ display_component_t *display_init(int sda_pin, int scl_pin)
     // Lock the mutex due to the LVGL APIs are not thread-safe
     if (lvgl_port_lock(0))
     {
-        display_ui(new_display, 0, 0, 0);
+        display_ui(new_display, 0, 0, 0, false);
         // Release the mutex
         lvgl_port_unlock();
         return new_display;
@@ -84,38 +84,44 @@ display_component_t *display_init(int sda_pin, int scl_pin)
     return NULL;
 }
 
-void display_ui(display_component_t *display, int state, int average_value, int pot_value)
+void display_ui(display_component_t *display, int state, int average_value, int pot_value, bool sleep)
 {
-    static char status_buffer[22];
     lv_obj_t *scr = lv_disp_get_scr_act(display->disp);
     lv_obj_clean(scr);
-
-    lv_obj_t *label = lv_label_create(scr);
-    lv_label_set_long_mode(label, LV_LABEL_LONG_SCROLL);
-    if (state == 1)
+    if (sleep == true)
     {
-        strncpy(status_buffer, "Caution: Alert", sizeof(status_buffer));
-    }
-    else if (state == 2)
-    {
-        strncpy(status_buffer, "Alert: Rising", sizeof(status_buffer));
+        lv_obj_clean(scr);
     }
     else
     {
-        strncpy(status_buffer, "All Clear: Safe", sizeof(status_buffer));
+        static char status_buffer[22];
+        lv_obj_t *label = lv_label_create(scr);
+        lv_label_set_long_mode(label, LV_LABEL_LONG_SCROLL);
+        if (state == 1)
+        {
+            strncpy(status_buffer, "Caution: Alert", sizeof(status_buffer));
+        }
+        else if (state == 2)
+        {
+            strncpy(status_buffer, "Alert: Rising", sizeof(status_buffer));
+        }
+        else
+        {
+            strncpy(status_buffer, "All Clear: Safe", sizeof(status_buffer));
+        }
+        lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 0);
+        lv_label_set_text_static(label, status_buffer);
+
+        lv_obj_t *label1 = lv_label_create(scr);
+        lv_label_set_text_fmt(label1, "Sensor Avg: %d", average_value);
+        lv_label_set_long_mode(label1, LV_LABEL_LONG_SCROLL);
+        lv_obj_align(label1, LV_ALIGN_CENTER, 0, 0);
+
+        lv_obj_t *label2 = lv_label_create(scr);
+        lv_label_set_text_fmt(label2, "Alarm Limit: %d", pot_value);
+        lv_label_set_long_mode(label2, LV_LABEL_LONG_SCROLL);
+        lv_obj_align(label2, LV_ALIGN_BOTTOM_MID, 0, 0);
     }
-    lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 0);
-    lv_label_set_text_static(label, status_buffer);
-
-    lv_obj_t *label1 = lv_label_create(scr);
-    lv_label_set_text_fmt(label1, "Sensor Avg: %d", average_value);
-    lv_label_set_long_mode(label1, LV_LABEL_LONG_SCROLL);
-    lv_obj_align(label1, LV_ALIGN_CENTER, 0, 0);
-
-    lv_obj_t *label2 = lv_label_create(scr);
-    lv_label_set_text_fmt(label2, "Alarm Limit: %d", pot_value);
-    lv_label_set_long_mode(label2, LV_LABEL_LONG_SCROLL);
-    lv_obj_align(label2, LV_ALIGN_BOTTOM_MID, 0, 0);
 }
 
 void display_free(display_component_t *display)

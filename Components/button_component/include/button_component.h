@@ -38,7 +38,8 @@ typedef struct
     PIN_TYPE btn_pin;
     btn_state_t state;
     int stateChangeTime;
-    void (*onPressedCallback)(int pin);
+    void (*onPressedCallback)(int pin, void *arg);
+    void *onPressed_arg;
     void (*onReleasedCallback)(int pin);
 } button_component;
 
@@ -50,6 +51,6 @@ void btn_update(button_component *btn);
 int btn_isPressed(button_component *btn);
 
 // Sätter onPressed
-void btn_setOnPressed(button_component *btn, void (*onPressed)(int pin));
+void btn_setOnPressed(button_component *btn, void (*onPressed)(int pin, void *onPressed_arg), void *arg);
 
 void btn_destroy(button_component *btn);

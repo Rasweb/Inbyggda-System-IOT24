@@ -109,7 +109,7 @@ int adc_buffer_average(adc_t *pot)
     return res;
 }
 
-void adc_destroy(adc_t *pot)
+void adc_free(adc_t *pot)
 {
     if (pot != NULL)
     {

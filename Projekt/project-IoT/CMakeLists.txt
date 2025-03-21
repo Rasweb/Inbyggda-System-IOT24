@@ -7,6 +7,7 @@ cmake_minimum_required(VERSION 3.5)
 set(EXTRA_COMPONENT_DIRS
     "../../Components/potentiometer_comp"
     "../../Components/analog_led_component"
+    "../../Components/button_component"
 )
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)

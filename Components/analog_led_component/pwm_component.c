@@ -2,33 +2,6 @@
 #define MAX_DUTY 4095
 int duty = 0;
 
-// Noter
-const int NOTE_G4 = 392;
-const int NOTE_Ds4 = 311;
-const int NOTE_A4s = 466;
-const int NOTE_D5 = 587;
-const int NOTE_Ds5 = 622;
-const int NOTE_G5 = 784;
-const int NOTE_Fs5 = 739;
-const int NOTE_F5 = 698;
-const int NOTE_E5 = 659;
-
-// Melodin
-const int warning_melody[] = {
-    NOTE_G4, NOTE_G4, NOTE_G4, NOTE_Ds4, NOTE_A4s, NOTE_G4, NOTE_Ds4, NOTE_A4s, NOTE_G4,
-    NOTE_D5, NOTE_D5, NOTE_D5, NOTE_Ds5, NOTE_A4s, NOTE_G4, NOTE_Ds4, NOTE_A4s, NOTE_G4,
-    NOTE_G5, NOTE_G4, NOTE_G4, NOTE_G5, NOTE_Fs5, NOTE_F5, NOTE_E5, NOTE_Ds5, NOTE_E5,
-    NOTE_A4s, NOTE_Ds5, NOTE_D5, NOTE_A4s, NOTE_Ds5, NOTE_D5, NOTE_A4s, NOTE_Ds5, NOTE_D5,
-    NOTE_A4s, NOTE_G4, NOTE_Ds4, NOTE_A4s, NOTE_G4, NOTE_Ds4, NOTE_A4s, NOTE_G4, NOTE_Ds4};
-
-// Melodi längd
-const int warning_note_durations[] = {
-    500, 500, 500, 350, 150, 500, 350, 150, 1000,
-    500, 500, 500, 350, 150, 500, 350, 150, 1000,
-    500, 350, 150, 500, 350, 150, 500, 350, 150,
-    1000, 500, 350, 150, 500, 350, 150, 500, 350,
-    150, 500, 350, 150, 500, 350, 150, 500, 350};
-
 pwm_component_t *pwm_init(int pin, uint32_t freq_hertz, ledc_mode_t speed_mode, ledc_timer_t timer_num, ledc_channel_t channel, uint32_t duty_range, uint32_t fade_duration)
 {
     // LEDC timer configuration
@@ -70,8 +43,458 @@ pwm_component_t *pwm_init(int pin, uint32_t freq_hertz, ledc_mode_t speed_mode, 
     new_pwm->duty = 0;
     new_pwm->note_playing = false;
     new_pwm->noteIndex = 0;
+    new_pwm->warning_melody_arr = NULL;
+    new_pwm->warning_note_durations_arr = NULL;
+    new_pwm->melody_choice = 1;
+    new_pwm->warning_melody_arr_size = 0;
     return new_pwm;
 };
+void set_melody(pwm_component_t *pwm, int *melody, int *durations, int size, int choice)
+{
+    pwm->warning_melody_arr = (int *)malloc(pwm->warning_melody_arr_size * sizeof(int));
+    pwm->warning_note_durations_arr = (int *)malloc(pwm->warning_melody_arr_size * sizeof(int));
+
+    for (int i = 0; i < pwm->warning_melody_arr_size; i++)
+    {
+        pwm->warning_melody_arr[i] = melody[i];
+        pwm->warning_note_durations_arr[i] = durations[i];
+    }
+    pwm->melody_choice = choice;
+}
+
+void choose_melody(pwm_component_t *pwm, int choice)
+{
+    if (pwm->warning_melody_arr != NULL)
+    {
+        free(pwm->warning_melody_arr);
+        pwm->warning_melody_arr = NULL;
+    }
+    if (pwm->warning_note_durations_arr != NULL)
+    {
+        free(pwm->warning_note_durations_arr);
+        pwm->warning_note_durations_arr = NULL;
+    }
+
+    ESP_LOGI("ss", "here choice: %d", choice);
+    // Imperial march
+    if (choice == 1)
+    {
+        // Melodin
+        int imperial_melody[] = {
+            NOTE_G4, NOTE_G4, NOTE_G4, NOTE_DS4, NOTE_AS4, NOTE_G4, NOTE_DS4, NOTE_AS4, NOTE_G4,
+            NOTE_D5, NOTE_D5, NOTE_D5, NOTE_DS5, NOTE_AS4, NOTE_G4, NOTE_DS4, NOTE_AS4, NOTE_G4,
+            NOTE_G5, NOTE_G4, NOTE_G4, NOTE_G5, NOTE_FS5, NOTE_F5, NOTE_E5, NOTE_DS5, NOTE_E5,
+            NOTE_AS4, NOTE_DS5, NOTE_D5, NOTE_AS4, NOTE_DS5, NOTE_D5, NOTE_AS4, NOTE_DS5, NOTE_D5,
+            NOTE_AS4, NOTE_G4, NOTE_DS4, NOTE_AS4, NOTE_G4, NOTE_DS4, NOTE_AS4, NOTE_G4, NOTE_DS4};
+
+        // Melodi längd
+        int imperial_note_durations[] = {
+            500, 500, 500, 350, 150, 500, 350, 150, 1000,
+            500, 500, 500, 350, 150, 500, 350, 150, 1000,
+            500, 350, 150, 500, 350, 150, 500, 350, 150,
+            1000, 500, 350, 150, 500, 350, 150, 500, 350,
+            150, 500, 350, 150, 500, 350, 150, 500, 350};
+
+        pwm->warning_melody_arr_size = sizeof(imperial_melody) / sizeof(imperial_melody[0]);
+        set_melody(pwm, imperial_melody, imperial_note_durations, pwm->warning_melody_arr_size, choice);
+    }
+    // Pirates of the caribbean
+    else if (choice == 2)
+    {
+        ESP_LOGI("TSS", "It'sa here");
+        int pirates_melody[] = {
+            NOTE_E4, NOTE_G4, NOTE_A4, NOTE_A4,
+            NOTE_A4, NOTE_B4, NOTE_C5, NOTE_C5,
+            NOTE_C5, NOTE_D5, NOTE_B4, NOTE_B4,
+            NOTE_A4, NOTE_G4, NOTE_A4,
+
+            NOTE_E4, NOTE_G4, NOTE_A4, NOTE_A4,
+            NOTE_A4, NOTE_B4, NOTE_C5, NOTE_C5,
+            NOTE_C5, NOTE_D5, NOTE_B4, NOTE_B4,
+            NOTE_A4, NOTE_G4, NOTE_A4,
+
+            NOTE_E4, NOTE_G4, NOTE_A4, NOTE_A4,
+            NOTE_A4, NOTE_C5, NOTE_D5, NOTE_D5,
+            NOTE_D5, NOTE_E5, NOTE_F5, NOTE_F5,
+            NOTE_E5, NOTE_D5, NOTE_E5, NOTE_A4,
+
+            NOTE_A4, NOTE_B4, NOTE_C5, NOTE_C5,
+            NOTE_D5, NOTE_E5, NOTE_A4,
+            NOTE_A4, NOTE_C5, NOTE_B4, NOTE_B4,
+            NOTE_C5, NOTE_A4, NOTE_B4,
+
+            NOTE_A4, NOTE_A4,
+            // Repeat of first part
+            NOTE_A4, NOTE_B4, NOTE_C5, NOTE_C5,
+            NOTE_C5, NOTE_D5, NOTE_B4, NOTE_B4,
+            NOTE_A4, NOTE_G4, NOTE_A4,
+
+            NOTE_E4, NOTE_G4, NOTE_A4, NOTE_A4,
+            NOTE_A4, NOTE_B4, NOTE_C5, NOTE_C5,
+            NOTE_C5, NOTE_D5, NOTE_B4, NOTE_B4,
+            NOTE_A4, NOTE_G4, NOTE_A4,
+
+            NOTE_E4, NOTE_G4, NOTE_A4, NOTE_A4,
+            NOTE_A4, NOTE_C5, NOTE_D5, NOTE_D5,
+            NOTE_D5, NOTE_E5, NOTE_F5, NOTE_F5,
+            NOTE_E5, NOTE_D5, NOTE_E5, NOTE_A4,
+
+            NOTE_A4, NOTE_B4, NOTE_C5, NOTE_C5,
+            NOTE_D5, NOTE_E5, NOTE_A4,
+            NOTE_A4, NOTE_C5, NOTE_B4, NOTE_B4,
+            NOTE_C5, NOTE_A4, NOTE_B4,
+            // End of Repeat
+
+            NOTE_E5, NOTE_F5,
+            NOTE_E5, NOTE_E5, NOTE_G5, NOTE_E5, NOTE_D5,
+            NOTE_D5, NOTE_C5,
+            NOTE_B4, NOTE_C5, NOTE_B4, NOTE_A4,
+
+            NOTE_E5, NOTE_F5,
+            NOTE_E5, NOTE_E5, NOTE_G5, NOTE_E5, NOTE_D5,
+            NOTE_D5, NOTE_C5,
+            NOTE_B4, NOTE_C5, NOTE_B4, NOTE_A4};
+
+        int pirates_note_durations[] = {
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            125.00, 125.00, 250.00, 125.00,
+
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            125.00, 125.00, 250.00, 125.00,
+
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            125.00, 125.00, 125.00, 250.00, 125.00,
+
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            250.00, 125.00, 250.00, 125.00,
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            125.00, 125.00, 250.00, 250.00,
+
+            250.00, 125.00,
+            // Repeat of First Part
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            125.00, 125.00, 250.00, 125.00,
+
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            125.00, 125.00, 250.00, 125.00,
+            125.00, 125.00, 250.00, 125.00,
+
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            250.00, 125.00, 250.00, 125.00,
+            125.00, 125.00, 250.00, 125.00, 125.00,
+            125.00, 125.00, 250.00, 250.00,
+            // End of Repeat
+
+            250.00, 125.00, 250.00, 250.00, 125.00, 250.00,
+            125.00, 125.00, 125.00, 125.00, 125.00, 125.00, 125.00, 125.00, 250.00,
+            250.00, 125.00, 250.00, 250.00, 125.00, 250.00,
+            125.00, 125.00, 125.00, 125.00, 500.00,
+
+            250.00, 125.00, 250.00, 250.00, 125.00, 250.00,
+            125.00, 125.00, 125.00, 125.00, 125.00, 125.00, 125.00, 125.00, 250.00,
+            250.00, 125.00, 250.00, 250.00, 125.00, 250.00,
+            125.00, 125.00, 125.00, 125.00, 500.00};
+
+        pwm->warning_melody_arr_size = sizeof(pirates_melody) / sizeof(pirates_melody[0]);
+        set_melody(pwm, pirates_melody, pirates_note_durations, pwm->warning_melody_arr_size, choice);
+    }
+    // // Game of thrones
+    else if (choice == 3)
+    {
+        int thrones_melody[] = {
+            NOTE_G4, NOTE_C4, NOTE_DS4, NOTE_F4, NOTE_G4, NOTE_C4, NOTE_DS4, NOTE_F4,
+            NOTE_G4, NOTE_C4, NOTE_DS4, NOTE_F4, NOTE_G4, NOTE_C4, NOTE_DS4, NOTE_F4,
+            NOTE_G4, NOTE_C4, NOTE_E4, NOTE_F4, NOTE_G4, NOTE_C4, NOTE_E4, NOTE_F4,
+            NOTE_G4, NOTE_C4, NOTE_E4, NOTE_F4, NOTE_G4, NOTE_C4, NOTE_E4, NOTE_F4,
+            NOTE_G4, NOTE_C4,
+
+            NOTE_DS4, NOTE_F4, NOTE_G4, NOTE_C4, NOTE_DS4, NOTE_F4,
+            NOTE_D4,
+            NOTE_F4, NOTE_AS3,
+            NOTE_DS4, NOTE_D4, NOTE_F4, NOTE_AS3,
+            NOTE_DS4, NOTE_D4, NOTE_C4,
+
+            NOTE_G4, NOTE_C4,
+
+            NOTE_DS4, NOTE_F4, NOTE_G4, NOTE_C4, NOTE_DS4, NOTE_F4,
+            NOTE_D4,
+            NOTE_F4, NOTE_AS3,
+            NOTE_DS4, NOTE_D4, NOTE_F4, NOTE_AS3,
+            NOTE_DS4, NOTE_D4, NOTE_C4,
+            NOTE_G4, NOTE_C4,
+            NOTE_DS4, NOTE_F4, NOTE_G4, NOTE_C4, NOTE_DS4, NOTE_F4,
+
+            NOTE_D4,
+            NOTE_F4, NOTE_AS3,
+            NOTE_D4, NOTE_DS4, NOTE_D4, NOTE_AS3,
+            NOTE_C4,
+            NOTE_C5,
+            NOTE_AS4,
+            NOTE_C4,
+            NOTE_G4,
+            NOTE_DS4,
+            NOTE_DS4, NOTE_F4,
+            NOTE_G4,
+
+            NOTE_C5,
+            NOTE_AS4,
+            NOTE_C4,
+            NOTE_G4,
+            NOTE_DS4,
+            NOTE_DS4, NOTE_D4,
+            NOTE_C5, NOTE_G4, NOTE_GS4, NOTE_AS4, NOTE_C5, NOTE_G4, NOTE_GS4, NOTE_AS4,
+            NOTE_C5, NOTE_G4, NOTE_GS4, NOTE_AS4, NOTE_C5, NOTE_G4, NOTE_GS4, NOTE_AS4,
+
+            NOTE_GS5, NOTE_AS5, NOTE_C6, NOTE_G5, NOTE_GS5, NOTE_AS5,
+            NOTE_C6, NOTE_G5, NOTE_GS5, NOTE_AS5, NOTE_C6, NOTE_G5, NOTE_GS5, NOTE_AS5};
+        int thrones_note_durations[] = {
+            125.00, 125.00, 62.50, 62.50, 125.00, 125.00, 62.50, 62.50,
+            125.00, 125.00, 62.50, 62.50, 125.00, 125.00, 62.50, 62.50,
+            125.00, 125.00, 62.50, 62.50, 125.00, 125.00, 62.50, 62.50,
+            125.00, 125.00, 62.50, 62.50, 125.00, 125.00, 62.50, 62.50,
+            250.00, 250.00,
+
+            62.50, 62.50, 250.00, 250.00, 62.50, 62.50,
+            1000.00,
+            250.00, 250.00,
+            62.50, 62.50, 250.00, 250.00,
+            62.50, 62.50, 1000.00,
+
+            250.00, 250.00,
+
+            62.50, 62.50, 250.00, 250.00, 62.50, 62.50,
+            1000.00,
+            250.00, 250.00,
+            62.50, 62.50, 250.00, 250.00,
+            62.50, 62.50,
+            250.00, 250.00,
+
+            500.00,
+            250.00, 250.00,
+            125.00, 125.00, 125.00, 125.00,
+            1000.00,
+            500.00,
+            500.00,
+            500.00,
+            500.00,
+            500.00,
+            250.00, 250.00,
+            1000.00,
+
+            500.00,
+            500.00,
+            500.00,
+            500.00,
+            500.00,
+            250.00, 250.00,
+            125.00, 125.00, 62.50, 62.50, 125.00, 125.00,
+            125.00, 125.00, 62.50, 62.50,
+            125.00, 125.00, 62.50, 62.50,
+
+            250.00, 62.50, 62.50, 125.00, 62.50, 125.00, 62.50, 125.00,
+            62.50, 62.50, 62.50, 62.50};
+
+        pwm->warning_melody_arr_size = sizeof(thrones_melody) / sizeof(thrones_melody[0]);
+        set_melody(pwm, thrones_melody, thrones_note_durations, pwm->warning_melody_arr_size, choice);
+    }
+    // Star wars main theme
+    else if (choice == 4)
+    {
+
+        int star_wars_melody[] = {
+            NOTE_AS4, NOTE_AS4, NOTE_AS4,
+            NOTE_F5, NOTE_C6,
+            NOTE_AS5, NOTE_A5, NOTE_G5, NOTE_F6, NOTE_C6,
+            NOTE_AS5, NOTE_A5, NOTE_G5, NOTE_F6, NOTE_C6,
+            NOTE_AS5, NOTE_A5, NOTE_AS5, NOTE_G5, NOTE_C5, NOTE_C5, NOTE_C5,
+            NOTE_F5, NOTE_C6,
+            NOTE_AS5, NOTE_A5, NOTE_G5, NOTE_F6, NOTE_C6,
+
+            NOTE_AS5, NOTE_A5, NOTE_G5, NOTE_F6, NOTE_C6,
+            NOTE_AS5, NOTE_A5, NOTE_AS5, NOTE_G5, NOTE_C5, NOTE_C5,
+            NOTE_D5, NOTE_D5, NOTE_AS5, NOTE_A5, NOTE_G5, NOTE_F5,
+            NOTE_F5, NOTE_G5, NOTE_A5, NOTE_G5, NOTE_D5, NOTE_E5, NOTE_C5, NOTE_C5,
+            NOTE_D5, NOTE_D5, NOTE_AS5, NOTE_A5, NOTE_G5, NOTE_F5,
+
+            NOTE_C6, NOTE_G5, NOTE_G5, NOTE_C5,
+            NOTE_D5, NOTE_D5, NOTE_AS5, NOTE_A5, NOTE_G5, NOTE_F5,
+            NOTE_F5, NOTE_G5, NOTE_A5, NOTE_G5, NOTE_D5, NOTE_E5, NOTE_C6, NOTE_C6,
+            NOTE_F6, NOTE_DS6, NOTE_CS6, NOTE_C6, NOTE_AS5, NOTE_GS5, NOTE_G5, NOTE_F5,
+            NOTE_C6};
+        int star_wars_note_durations[] = {
+            125.00, 125.00, 125.00,
+            500.00, 500.00,
+            125.00, 125.00, 125.00, 500.00, 250.00,
+            125.00, 125.00, 125.00, 500.00, 250.00,
+            125.00, 125.00, 125.00, 500.00, 125.00, 125.00, 125.00,
+            500.00, 500.00,
+            125.00, 125.00, 125.00, 500.00, 250.00,
+
+            125.00, 125.00, 125.00, 500.00, 250.00,
+            125.00, 125.00, 125.00, 500.00, 62.50,
+            250.00, 125.00, 125.00, 125.00, 125.00,
+            125.00, 125.00, 125.00, 250.00, 125.00, 250.00, 125.00, 62.50,
+            250.00, 125.00, 125.00, 125.00, 125.00,
+
+            125.00, 62.50, 500.00, 125.00, 125.00,
+            250.00, 125.00, 125.00, 125.00, 125.00,
+            125.00, 125.00, 125.00, 250.00, 125.00, 250.00, 125.00, 62.50,
+            250.00, 125.00, 250.00, 125.00, 250.00, 125.00, 250.00, 125.00,
+            1000.00};
+
+        pwm->warning_melody_arr_size = sizeof(star_wars_melody) / sizeof(star_wars_melody[0]);
+        set_melody(pwm, star_wars_melody, star_wars_note_durations, pwm->warning_melody_arr_size, choice);
+    }
+    // Super Mario Bros
+    else if (choice == 5)
+    {
+        int super_melody[] = {
+            NOTE_E5, NOTE_E5, NOTE_E5, NOTE_C5, NOTE_E5,
+            NOTE_G5, NOTE_G4,
+            NOTE_C5, NOTE_G4, NOTE_E4,
+            NOTE_A4, NOTE_B4, NOTE_AS4, NOTE_A4,
+            NOTE_G4, NOTE_E5, NOTE_G5, NOTE_A5, NOTE_F5, NOTE_G5,
+            NOTE_E5, NOTE_C5, NOTE_D5, NOTE_B4,
+            NOTE_C5, NOTE_G4, NOTE_E4,
+            NOTE_A4, NOTE_B4, NOTE_AS4, NOTE_A4,
+            NOTE_G4, NOTE_E5, NOTE_G5, NOTE_A5, NOTE_F5, NOTE_G5,
+            NOTE_E5, NOTE_C5, NOTE_D5, NOTE_B4,
+
+            NOTE_G5, NOTE_FS5, NOTE_F5, NOTE_DS5, NOTE_E5,
+            NOTE_GS4, NOTE_A4, NOTE_C4, NOTE_A4, NOTE_C5, NOTE_D5,
+            NOTE_DS5, NOTE_D5,
+            NOTE_C5,
+
+            NOTE_G5, NOTE_FS5, NOTE_F5, NOTE_DS5, NOTE_E5,
+            NOTE_GS4, NOTE_A4, NOTE_C4, NOTE_A4, NOTE_C5, NOTE_D5,
+            NOTE_DS5, NOTE_D5,
+            NOTE_C5,
+
+            NOTE_C5, NOTE_C5, NOTE_C5, NOTE_C5, NOTE_D5,
+            NOTE_E5, NOTE_C5, NOTE_A4, NOTE_G4,
+
+            NOTE_C5, NOTE_C5, NOTE_C5, NOTE_C5, NOTE_D5, NOTE_E5,
+
+            NOTE_C5, NOTE_C5, NOTE_C5, NOTE_C5, NOTE_D5,
+            NOTE_E5, NOTE_C5, NOTE_A4, NOTE_G4,
+            NOTE_E5, NOTE_E5, NOTE_E5, NOTE_C5, NOTE_E5,
+            NOTE_G5, NOTE_G4,
+            NOTE_C5, NOTE_G4, NOTE_E4,
+
+            NOTE_A4, NOTE_B4, NOTE_AS4, NOTE_A4,
+            NOTE_G4, NOTE_E5, NOTE_G5, NOTE_A5, NOTE_F5, NOTE_G5,
+            NOTE_E5, NOTE_C5, NOTE_D5, NOTE_B4,
+
+            NOTE_C5, NOTE_G4, NOTE_E4,
+            NOTE_A4, NOTE_B4, NOTE_AS4, NOTE_A4,
+            NOTE_G4, NOTE_E5, NOTE_G5, NOTE_A5, NOTE_F5, NOTE_G5,
+            NOTE_E5, NOTE_C5, NOTE_D5, NOTE_B4,
+
+            NOTE_E5, NOTE_C5, NOTE_G4, NOTE_GS4,
+            NOTE_A4, NOTE_F5, NOTE_F5, NOTE_A4,
+            NOTE_D5, NOTE_A5, NOTE_A5, NOTE_A5, NOTE_G5, NOTE_F5,
+
+            NOTE_E5, NOTE_C5, NOTE_A4, NOTE_G4,
+            NOTE_E5, NOTE_C5, NOTE_G4, NOTE_GS4,
+            NOTE_A4, NOTE_F5, NOTE_F5, NOTE_A4,
+            NOTE_B4, NOTE_F5, NOTE_F5, NOTE_F5, NOTE_E5, NOTE_D5,
+            NOTE_C5, NOTE_E4, NOTE_E4, NOTE_C4,
+
+            NOTE_E5, NOTE_C5, NOTE_G4, NOTE_GS4,
+            NOTE_A4, NOTE_F5, NOTE_F5, NOTE_A4,
+            NOTE_D5, NOTE_A5, NOTE_A5, NOTE_A5, NOTE_G5, NOTE_F5,
+
+            NOTE_E5, NOTE_C5, NOTE_A4, NOTE_G4,
+            NOTE_E5, NOTE_C5, NOTE_G4, NOTE_GS4,
+            NOTE_A4, NOTE_F5, NOTE_F5, NOTE_A4,
+            NOTE_B4, NOTE_F5, NOTE_F5, NOTE_F5, NOTE_E5, NOTE_D5,
+            NOTE_C5, NOTE_E4, NOTE_E4, NOTE_C4,
+            NOTE_C5, NOTE_C5, NOTE_C5, NOTE_C5, NOTE_D5, NOTE_E5,
+
+            NOTE_C5, NOTE_C5, NOTE_C5, NOTE_C5, NOTE_D5,
+            NOTE_E5, NOTE_C5, NOTE_A4, NOTE_G4,
+            NOTE_E5, NOTE_E5, NOTE_E5, NOTE_C5, NOTE_E5,
+            NOTE_G5, NOTE_G4,
+            NOTE_E5, NOTE_C5, NOTE_G4, NOTE_GS4,
+            NOTE_A4, NOTE_F5, NOTE_F5, NOTE_A4,
+            NOTE_D5, NOTE_A5, NOTE_A5, NOTE_A5, NOTE_G5, NOTE_F5,
+
+            NOTE_E5, NOTE_C5, NOTE_A4, NOTE_G4,
+            NOTE_E5, NOTE_C5, NOTE_G4, NOTE_GS4,
+            NOTE_A4, NOTE_F5, NOTE_F5, NOTE_A4,
+            NOTE_B4, NOTE_F5, NOTE_F5, NOTE_F5, NOTE_E5, NOTE_D5,
+            NOTE_C5, NOTE_E4, NOTE_E4, NOTE_C4,
+
+            // Game over sound
+            NOTE_C5, NOTE_G4, NOTE_E4,
+            NOTE_A4, NOTE_B4, NOTE_A4, NOTE_GS4, NOTE_AS4, NOTE_GS4,
+            NOTE_G4, NOTE_D4, NOTE_E4};
+        int super_note_durations[] = {
+            125, 125, 125, 125, 125, 125, 125,
+            250, 250, 125, 250,
+            250, 125, 250, 250,
+            250, 250, 125, 250,
+            125, 125, 125, 250, 125, 125,
+            125, 250, 125, 125, 250,
+            250, 125, 250, 250,
+            250, 250, 125, 250,
+            125, 125, 125, 250, 125, 125,
+            125, 250, 125, 125,
+
+            250, 125, 125, 125, 250, 125,
+            125, 125, 125, 125, 125, 125, 125, 125,
+            250, 250, 125, 250,
+            500, 500,
+
+            250, 125, 125, 125, 250, 125,
+            125, 125, 125, 125, 125, 125, 125, 125,
+            250, 250, 125, 250,
+            500, 500,
+
+            125, 250, 125, 125, 125, 250,
+            125, 250, 125, 500,
+
+            125, 250, 125, 125, 125, 125, 125,
+            1000,
+            125, 250, 125, 125, 125, 250,
+            125, 250, 125, 500,
+            125, 125, 125, 125, 125, 125, 250,
+            250, 250, 250, 250,
+            250, 125, 250, 250,
+
+            250, 250, 125, 250,
+            125, 125, 125, 250, 125, 125,
+            125, 250, 125, 250,
+
+            250, 125, 250, 250,
+            250, 250, 125, 250,
+            125, 125, 125, 250, 125, 125,
+            125, 250, 125, 250,
+
+            125, 250, 125, 125,
+            125, 250, 125, 500,
+            125, 125, 125, 125, 125, 125,
+
+            125, 250, 125, 500,
+            125, 250, 125, 250,
+            125, 250, 125, 125, 125, 125,
+            125, 250, 125, 500,
+
+            250, 250, 250,
+            125, 125, 125, 125, 125, 125,
+            125, 125, 500};
+
+        pwm->warning_melody_arr_size = sizeof(super_melody) / sizeof(super_melody[0]);
+        set_melody(pwm, super_melody, super_note_durations, pwm->warning_melody_arr_size, choice);
+    }
+}
 void pwm_update(pwm_component_t *pwm)
 {
     TickType_t current_time = xTaskGetTickCount();
@@ -93,18 +516,19 @@ void pwm_update(pwm_component_t *pwm)
     case PWM_MELODY_PLAYING:
         if (!pwm->note_playing)
         {
-            if (pwm->noteIndex >= sizeof(warning_melody) / sizeof(warning_melody[0]))
+            if (pwm->noteIndex >= pwm->warning_melody_arr_size)
+            // if (pwm->noteIndex >= sizeof(pwm->warning_melody_arr) / sizeof(pwm->warning_melody_arr[0]))
             {
                 pwm->next_state = PWM_OFF;
                 break;
             }
-            ledc_set_freq(pwm->speed_mode, pwm->timer_num, warning_melody[pwm->noteIndex]);
+            ledc_set_freq(pwm->speed_mode, pwm->timer_num, pwm->warning_melody_arr[pwm->noteIndex]);
             ledc_set_duty(pwm->speed_mode, pwm->channel, 2048); // 50% duty cycle (4096/2)
             ledc_update_duty(pwm->speed_mode, pwm->channel);
 
             pwm->note_playing = true;
         }
-        if ((current_time - pwm->stateChangeTime) >= pdMS_TO_TICKS(warning_note_durations[pwm->noteIndex]))
+        if ((current_time - pwm->stateChangeTime) >= pdMS_TO_TICKS(pwm->warning_note_durations_arr[pwm->noteIndex]))
         {
             ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_set_duty(pwm->speed_mode, pwm->channel, 0));
             ESP_ERROR_CHECK_WITHOUT_ABORT(ledc_update_duty(pwm->speed_mode, pwm->channel));
@@ -113,7 +537,7 @@ void pwm_update(pwm_component_t *pwm)
         }
         break;
     case PWM_MELODY_PLAYING_DELAY:
-        if ((current_time - pwm->stateChangeTime) >= pdMS_TO_TICKS(warning_note_durations[pwm->noteIndex]))
+        if ((current_time - pwm->stateChangeTime) >= pdMS_TO_TICKS(pwm->warning_note_durations_arr[pwm->noteIndex]))
         {
             ledc_set_duty(pwm->speed_mode, pwm->channel, 0);
             ledc_update_duty(pwm->speed_mode, pwm->channel);
@@ -199,17 +623,11 @@ void pwm_sine(pwm_component_t *pwm, int period)
     pwm->period = period;
     pwm->stateChangeTime = xTaskGetTickCount();
 }
-
-void pwm_destroy(pwm_component_t *pwm)
+void pwm_free(pwm_component_t *pwm)
 {
     if (pwm != NULL)
     {
         vPortFree(pwm);
         pwm = NULL;
     }
-}
-
-void pwm_free(pwm_component_t *pwm)
-{
-    vPortFree(pwm);
 }

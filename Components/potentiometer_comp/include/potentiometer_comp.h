@@ -35,4 +35,4 @@ int adc_getValue(adc_t *pot);
 void adc_setOnThreshold(adc_t *pot, THRESHOLD threshold, bool after, bool before, void (*onThreshold)(), void (*beforeThreshold)());
 void adc_update_buffer(adc_t *pot, int value);
 int adc_buffer_average(adc_t *pot);
-void adc_destroy(adc_t *pot);
+void adc_free(adc_t *pot);
